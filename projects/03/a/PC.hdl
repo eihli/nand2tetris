@@ -17,4 +17,27 @@ CHIP PC {
 
     PARTS:
     // Put your code here:
+    Not16 (in=in, out=nin);
+    And16 (a=in, b=nin, out=zeros);
+    Inc16 (in=out0, out=inced);
+
+    // !reset & load
+    Not (in=reset, out=cond1);
+    And (a=cond1, b=load, out=doLoad);
+
+    // !(reset | load) & inc
+    Or (a=reset, b=load, out=resetOrLoad);
+    Not (in=resetOrLoad, out=notResetOrLoad);
+    And (a=notResetOrLoad, b=inc, out=doInc);
+
+    // !(reset | load | inc)
+    Or (a=resetOrLoad, b=inc, out=resetOrLoadOrInc);
+    Not (in=resetOrLoadOrInc, out=doNoop);
+
+    Mux16 (a=out0, b=zeros, sel=reset, out=m0);
+    Mux16 (a=m0, b=in, sel=doLoad, out=m1);
+    Mux16 (a=m1, b=inced, sel=doInc, out=m2);
+    Mux16 (a=m2, b=out0, sel=doNoop, out=out2);
+
+    Register (in=out2, load=true, out=out0, out=out);
 }
