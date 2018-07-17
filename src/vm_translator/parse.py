@@ -1,6 +1,3 @@
-from functools import partial
-
-
 def fill(list_, val, count):
     result = list_[:]
     while len(result) < count:
@@ -247,26 +244,6 @@ def parse_push_that(cmd):
     ]
 
 
-segment_map = {
-    'constant': parse_push_constant,
-    'temp': parse_push_temp,
-    'pointer': parse_push_pointer,
-    'local': parse_push_local,
-    'argument': parse_push_argument,
-    'this': parse_push_this,
-    'that': parse_push_that,
-}
-
-
-def parse_push(segment, index):
-    return segment_map[segment](index)
-
-
-segments = {
-    'local': ['@SP', 'A=M', 'D=M', '@LCL', 'A=']
-}
-
-
 def parse_pop_local(cmd):
     index = cmd[2]
     return [
@@ -288,77 +265,6 @@ def parse_pop_local(cmd):
         'A=M',
         'M=D',
     ]
-
-
-parse_map = {
-    'add': parse_add,
-    'sub': parse_sub,
-    'neg': parse_neg,
-    'eq': parse_eq,
-    'gt': parse_gt,
-    'lt': parse_lt,
-    'and': parse_and,
-    'or': parse_or,
-    'not': parse_not,
-    'push': parse_push,
-}
-
-
-# Of the arguments fn, arg1, arg2,
-# slice from 1 to the value of this mapping
-# to send to the function specified by the key.
-arg_map = {
-    'add': 1,
-    'sub': 1,
-    'neg': 1,
-    'eq': 1,
-    'gt': 1,
-    'lt': 1,
-    'and': 1,
-    'or': 1,
-    'not': 1,
-    'push': 3,
-}
-
-
-d_eq_sp_val = [
-    '@SP',
-    'A=M',
-    'D=M',
-]
-
-
-dec_sp = [
-    '@SP',
-    'M=M-1',
-]
-
-
-temp_eq_d = [
-    '@R13',
-    'M=D',
-]
-
-
-m_eq_arg_index = [
-    '@ARG',
-    'D=M',
-    '@index',
-    'D=D+A',
-    'A=D',
-    'D=M',  # D has the address we want
-    '@R13',
-    'M=D',
-]
-save_stack_do_temp = [
-    '@SP',
-    'A=M',
-    'D=M',
-]
-
-
-pointer = partial(lambda x: '@R%d' % (x+3))
-temp = partial(lambda x: '@R%d' % (x+5))
 
 
 def parse_pop_argument(cmd):
@@ -501,12 +407,8 @@ parse_map = {
     ('pop', 'that'): parse_pop_that,
     ('pop', 'pointer'): parse_pop_pointer,
     ('pop', 'static'): parse_pop_static,
+    ('label')
 }
-
-
-def args(*arguments):
-    fn = arguments[0]
-    return arguments[1:arg_map[fn]]
 
 
 def parse_cmd(cmd, filename):
