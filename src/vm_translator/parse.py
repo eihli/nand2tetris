@@ -19,6 +19,15 @@ def get_y_and_x():
     ]
 
 
+dymx = [
+    '@SP',
+    'AM=M-1',
+    'D=M',  # Save off y value
+    '@SP',
+    'A=M-1',
+]
+
+
 def parse_add(cmd):
     return get_y_and_x() + ['M=M+D']
 
@@ -53,7 +62,7 @@ def get_jmp_label():
 
 def parse_bool(cmp):
     jmp_label = get_jmp_label()
-    return get_y_and_x() + [
+    return dymx + [
         'D=M-D',  # Set D = x - y to determine > < or ==
         'M=-1',  # Set memory at stack pointer to true
         '@SETTRUE%s' % jmp_label,  # Skip setting to false if jump
@@ -382,16 +391,7 @@ def parse_pop_that(cmd):
     ]
 
 
-parse_map = {
-    ('add', None): parse_add,
-    ('sub', None): parse_sub,
-    ('neg', None): parse_neg,
-    ('eq', None): parse_eq,
-    ('gt', None): parse_gt,
-    ('lt', None): parse_lt,
-    ('and', None): parse_and,
-    ('or', None): parse_or,
-    ('not', None): parse_not,
+stack_map = {
     ('push', 'constant'): parse_push_constant,
     ('push', 'argument'): parse_push_argument,
     ('push', 'local'): parse_push_local,
@@ -407,10 +407,44 @@ parse_map = {
     ('pop', 'that'): parse_pop_that,
     ('pop', 'pointer'): parse_pop_pointer,
     ('pop', 'static'): parse_pop_static,
-    ('label')
 }
+
+
+op_map = {
+    'add': lambda: dymx + ['M=M+D'],
+    'sub': lambda: dymx + ['M=M-D'],
+    'neg': lambda: ['@SP', 'A=M-1', 'M=-M'],
+    'eq': lambda: parse_bool('eq'),
+    'gt': lambda: parse_bool('gt'),
+    'lt': lambda: parse_bool('lt'),
+    'and': lambda: dymx + ['M=D&M'],
+    'or': lambda: dymx + ['M=D|M'],
+    'not': lambda: ['@SP', 'A=M-1', 'M=!M'],
+}
+
+
+def parse_label(label):
+    return ['({})'.format(label)]
+
+
+def parse_goto_label(label):
+    return [
+        '@{}'.format(label),
+        ';JMP',
+    ]
+
+
+class ParseNotImplemented(Exception):
+    pass
 
 
 def parse_cmd(cmd, filename):
     fn, arg1, arg2 = fill(cmd.split(' '), None, 3)
-    return parse_map[(fn, arg1)]((fn, arg1, arg2, filename))
+    if fn in op_map:
+        return op_map[fn]()
+    elif (fn, arg1) in stack_map:
+        return stack_map[(fn, arg1)]((fn, arg1, arg2, filename))
+    else:
+        raise ParseNotImplemented(
+            '{} {} {} not implemented'.format(fn, arg1, arg2)
+        )
