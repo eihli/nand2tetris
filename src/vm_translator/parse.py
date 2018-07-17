@@ -434,6 +434,27 @@ def parse_goto_label(label):
     ]
 
 
+def parse_if_goto(label):
+    """
+    If the top value in the stack is 0,
+    continue to the next command. Else, jump to label.
+    """
+    return [
+        '@SP',
+        'A=M-1',
+        'D=M',
+        '@{}'.format(label),
+        'D;JNE',
+    ]
+
+
+program_flow_map = {
+    'if-goto': parse_if_goto,
+    'goto': parse_goto_label,
+    'label': parse_label,
+}
+
+
 class ParseNotImplemented(Exception):
     pass
 
@@ -444,6 +465,8 @@ def parse_cmd(cmd, filename):
         return op_map[fn]()
     elif (fn, arg1) in stack_map:
         return stack_map[(fn, arg1)]((fn, arg1, arg2, filename))
+    elif fn in program_flow_map:
+        return program_flow_map[fn](arg1)
     else:
         raise ParseNotImplemented(
             '{} {} {} not implemented'.format(fn, arg1, arg2)
