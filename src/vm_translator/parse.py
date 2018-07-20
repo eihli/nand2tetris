@@ -192,6 +192,7 @@ def parse_pop_static(cmd):
 def parse_push_local(cmd):
     index = cmd[2]
     return [
+        '// {}'.format(cmd),
         '@%s' % index,
         'D=A',
         '@LCL',
@@ -430,7 +431,7 @@ def parse_label(label):
 def parse_goto_label(label):
     return [
         '@{}'.format(label),
-        ';JMP',
+        '0;JMP',
     ]
 
 
@@ -441,7 +442,8 @@ def parse_if_goto(label):
     """
     return [
         '@SP',
-        'A=M-1',
+        'M=M-1',
+        'A=M',
         'D=M',
         '@{}'.format(label),
         'D;JNE',
@@ -455,19 +457,173 @@ program_flow_map = {
 }
 
 
+def parse_function_def(cmd, fn):
+    name, num_args = cmd[1:3]
+    result = [
+        '({})'.format(name),
+    ]
+    for i in range(int(num_args)):
+        result += [
+            '@SP',
+            'A=M',
+            'M=0',
+            '@SP',
+            'M=M+1',
+        ]
+    return result
+
+
+return_addr_ctr = 0
+
+
+def get_return_address():
+    global return_addr_ctr
+    result = 'RETURN_ADDR{}'.format(return_addr_ctr)
+    return_addr_ctr += 1
+    return result
+
+
+parse_push_a = [
+    'D=M',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+]
+
+
+def parse_call(cmd, fn):
+    name, num_args = cmd[1:3]
+    result = [
+        '@{}'.format(name),
+    ]
+    for a in ['@LCL', '@ARG', '@THIS', '@THAT']:
+        result += [a] + parse_push_a
+    # Reposition ARG
+    result += [
+        '@5',
+        'D=A',
+        '@R13',
+        'M=D',
+        '@{}'.format(num_args),
+        'D=A',
+        '@R13',
+        'D=D+M',
+        '@SP',
+        'D=A-D',
+        '@ARG',
+        'M=D',
+        '@SP',
+        'D=A',
+        '@LCL',
+        'M=D',
+    ]
+    # goto f
+    result += [
+        '({})'.format(name)
+    ]
+    return result
+
+
+#RETURN
+#LCL
+#ARG
+#THIS
+#THAT
+
+def parse_return(cmd, fn):
+    result = [
+        '@LCL',
+        'D=M',
+        '@R14',  # R14 is "FRAME"
+        'M=D',
+        '// Put the return address in a temp var',
+        '@5',
+        'D=A',
+        '@LCL',
+        'D=M-D',
+        '@R15',  # R15 is "RET"
+        'M=D',
+        '// Reposition the return value for the caller',
+        '@SP',
+        'A=M-1',
+        'D=M',
+        '@ARG',
+        'A=M',
+        'M=D',
+        '// Restore stack pointer of the caller',
+        '@ARG',
+        'D=M+1',
+        '@SP',
+        'M=D',
+        '// Restore THAT of the caller',
+        '@R14',
+        'D=M-1',
+        'A=D',
+        'D=M',
+        '@THAT',
+        'M=D',
+        '// Restore THIS of caller',
+        '@2',
+        'D=A',
+        '@R14',
+        'D=M-D',
+        'A=D',
+        'D=M',
+        '@THIS',
+        'M=D',
+        '// Restore ARG of caller',
+        '@3',
+        'D=A',
+        '@R14',
+        'D=M-D',
+        'A=D',
+        'D=M',
+        '@ARG',
+        'M=D',
+        '// Restore LCL of caller',
+        '@4',
+        'D=A',
+        '@R14',
+        'D=M-D',
+        'A=D',
+        'D=M',
+        '@LCL',
+        'M=D',
+        '// GOTO return address',
+        '@R15',
+        'A=M',
+        '0;JMP',
+    ]
+    return result
+
+
+parse_fn_map = {
+    'function': parse_function_def,
+    'call': parse_call,
+    'return': parse_return,
+}
+
+
 class ParseNotImplemented(Exception):
     pass
 
 
 def parse_cmd(cmd, filename):
+    result = ['// start {}: {}'.format(filename, cmd)]
     fn, arg1, arg2 = fill(cmd.split(' '), None, 3)
     if fn in op_map:
-        return op_map[fn]()
+        result += op_map[fn]()
     elif (fn, arg1) in stack_map:
-        return stack_map[(fn, arg1)]((fn, arg1, arg2, filename))
+        result += stack_map[(fn, arg1)]((fn, arg1, arg2, filename))
     elif fn in program_flow_map:
-        return program_flow_map[fn](arg1)
+        result += program_flow_map[fn](arg1)
+    elif fn in parse_fn_map:
+        result += parse_fn_map[fn]((fn, arg1, arg2), filename)
     else:
         raise ParseNotImplemented(
             '{} {} {} not implemented'.format(fn, arg1, arg2)
         )
+    result += ['// end {}: {}'.format(filename, cmd)]
+    return result
