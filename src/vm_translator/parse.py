@@ -565,6 +565,8 @@ def parse_return(cmd, fn):
         'D=A',
         '@R14',
         'D=M-D',
+        'A=D',
+        'D=M',
         '@R15',
         'M=D',
         '// Put the return value at RAM[ARG] address',

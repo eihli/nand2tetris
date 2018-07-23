@@ -11,15 +11,16 @@ def strip_comments(line):
 
 
 def main(filename):
-    result = initialize_memory_segments()
+    result = []
     path = pathlib.Path(filename)
     if path.is_dir():
+        result += initialize_memory_segments()
         dir_name = path
         filenames = path.iterdir()
-        for filename in filenames:
-            file_path = pathlib.Path(filename)
+        for fn in filenames:
+            file_path = pathlib.Path(fn)
             if file_path.suffix == '.vm':
-                result += [writefile(filename)]
+                result += [writefile(str(fn))]
     else:
         dir_name = path.parent
         result += [writefile(filename)]
@@ -34,23 +35,7 @@ def initialize_memory_segments():
         'D=A',
         '@SP',
         'M=D',
-        '@400',
-        'D=A',
-        '@LCL',
-        'M=D',
-        '@500',
-        'D=A',
-        '@ARG',
-        'M=D',
-        '@3000',
-        'D=A',
-        '@THIS',
-        'M=D',
-        '@4000',
-        'D=A',
-        '@THAT',
-        'M=D',
-    ]
+    ] + parse.parse_cmd('call Sys.init 0', 'hSys.vm')
 
 
 def writefile(filename):
