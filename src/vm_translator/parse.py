@@ -464,6 +464,7 @@ def parse_function_def(cmd, fn):
     ]
     for i in range(int(num_args)):
         result += [
+            '// Pushing arg {}'.format(i),
             '@SP',
             'A=M',
             'M=0',
@@ -493,15 +494,37 @@ parse_push_a = [
 ]
 
 
+call_counter = 0
+
+
+def get_call_counter():
+    global call_counter
+    result = call_counter
+    call_counter += 1
+    return result
+
+
 def parse_call(cmd, fn):
     name, num_args = cmd[1:3]
+    call_count = get_call_counter()
     result = [
-        '@{}'.format(name),
+        '// Push return address',
+        '@{}${}'.format(name, call_count),
+        'D=A',
+        '@SP',
+        'A=M',
+        'M=D',
+        '@SP',
+        'M=M+1',
     ]
     for a in ['@LCL', '@ARG', '@THIS', '@THAT']:
-        result += [a] + parse_push_a
+        result += [
+            '// Pushing {} onto the stack as part of function call'.format(a),
+            a,
+        ] + parse_push_a
     # Reposition ARG
     result += [
+        '// Reposition ARG',
         '@5',
         'D=A',
         '@R13',
@@ -511,41 +534,40 @@ def parse_call(cmd, fn):
         '@R13',
         'D=D+M',
         '@SP',
-        'D=A-D',
+        'D=M-D',
         '@ARG',
         'M=D',
+        '// Reposition LCL',
         '@SP',
-        'D=A',
+        'D=M',
         '@LCL',
         'M=D',
+        '// Transfer control',
+        '@{}'.format(name),
+        '0;JMP',
     ]
     # goto f
     result += [
-        '({})'.format(name)
+        '({}${})'.format(name, call_count)
     ]
     return result
 
 
-#RETURN
-#LCL
-#ARG
-#THIS
-#THAT
-
 def parse_return(cmd, fn):
     result = [
+        '// Put FRAME address in R14',
         '@LCL',
         'D=M',
-        '@R14',  # R14 is "FRAME"
+        '@R14',
         'M=D',
-        '// Put the return address in a temp var',
+        '// Put return address in R15',
         '@5',
         'D=A',
-        '@LCL',
+        '@R14',
         'D=M-D',
-        '@R15',  # R15 is "RET"
+        '@R15',
         'M=D',
-        '// Reposition the return value for the caller',
+        '// Put the return value at RAM[ARG] address',
         '@SP',
         'A=M-1',
         'D=M',

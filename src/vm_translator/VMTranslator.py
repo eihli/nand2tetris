@@ -1,8 +1,9 @@
 import os
 import re
 import sys
-import parse
 import pathlib
+
+import parse
 
 
 def strip_comments(line):
@@ -10,7 +11,7 @@ def strip_comments(line):
 
 
 def main(filename):
-    result = []
+    result = initialize_memory_segments()
     path = pathlib.Path(filename)
     if path.is_dir():
         dir_name = path
@@ -25,6 +26,31 @@ def main(filename):
 
     with open('%s/%s.asm' % (dir_name, path.stem), 'w') as f:
         f.write('\n'.join(result))
+
+
+def initialize_memory_segments():
+    return [
+        '@256',
+        'D=A',
+        '@SP',
+        'M=D',
+        '@400',
+        'D=A',
+        '@LCL',
+        'M=D',
+        '@500',
+        'D=A',
+        '@ARG',
+        'M=D',
+        '@3000',
+        'D=A',
+        '@THIS',
+        'M=D',
+        '@4000',
+        'D=A',
+        '@THAT',
+        'M=D',
+    ]
 
 
 def writefile(filename):
