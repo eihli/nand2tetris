@@ -1,0 +1,14 @@
+class Cursor {
+	function void draw(int x, int y) {
+	    var int size;
+
+        let size = 512 / 32;
+		do Screen.drawRectangle(
+			(x * size) + 2,
+			(y * size) + 2,
+			((x + 1) * size) - 2,
+			((y + 1) * size) - 2
+		);
+		return;
+	}
+}

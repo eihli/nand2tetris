@@ -1,0 +1,42 @@
+/** Draw a grid */
+class Main {
+    function void main() {
+		var int key, crsr_x, crsr_y;
+		let crsr_x = 0;
+		let crsr_y = 0;
+
+		do Background.draw();
+		do Cursor.draw(crsr_x, crsr_y);
+		while (~(key = 81)) {
+			let key = Keyboard.keyPressed();
+			do Cursor.draw(crsr_x, crsr_y);
+			do Screen.setColor(true);
+			if (key = 132) {
+				do Screen.setColor(false);
+				do Cursor.draw(crsr_x, crsr_y);
+				let crsr_x = crsr_x + 1;
+				do Cursor.draw(crsr_x, crsr_y);
+			}
+			if (key = 130) {
+				do Screen.setColor(false);
+				do Cursor.draw(crsr_x, crsr_y);
+				let crsr_x = crsr_x - 1;
+				do Cursor.draw(crsr_x, crsr_y);
+			}
+			if (key = 131) {
+				do Screen.setColor(false);
+				do Cursor.draw(crsr_x, crsr_y);
+				let crsr_y = crsr_y - 1;
+				do Cursor.draw(crsr_x, crsr_y);
+			}
+			if (key = 133) {
+				do Screen.setColor(false);
+				do Cursor.draw(crsr_x, crsr_y);
+				let crsr_y = crsr_y + 1;
+				do Cursor.draw(crsr_x, crsr_y);
+			}
+			do Sys.wait(100);
+		}
+	    return;
+    }
+}

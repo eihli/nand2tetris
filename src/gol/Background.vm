@@ -1,0 +1,94 @@
+function Background.draw 9
+push constant 512
+push constant 32
+call Math.divide 2
+pop local 0
+push constant 512
+pop local 1
+push constant 256
+pop local 2
+push constant 0
+pop local 3
+label WHILE_EXP0
+push local 3
+push constant 1
+add
+push local 0
+call Math.multiply 2
+push local 1
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 4
+label WHILE_EXP1
+push local 4
+push constant 1
+add
+push local 0
+call Math.multiply 2
+push local 2
+lt
+not
+if-goto WHILE_END1
+push local 3
+push local 0
+call Math.multiply 2
+pop local 5
+push local 4
+push local 0
+call Math.multiply 2
+pop local 6
+push local 3
+push constant 1
+add
+push local 0
+call Math.multiply 2
+pop local 7
+push local 4
+push constant 1
+add
+push local 0
+call Math.multiply 2
+pop local 8
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push local 5
+push local 6
+push local 7
+push local 8
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push local 5
+push constant 1
+add
+push local 6
+push constant 1
+add
+push local 7
+push constant 1
+sub
+push local 8
+push constant 1
+sub
+call Screen.drawRectangle 4
+pop temp 0
+push local 4
+push constant 1
+add
+pop local 4
+goto WHILE_EXP1
+label WHILE_END1
+push local 3
+push constant 1
+add
+pop local 3
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
