@@ -1,0 +1,52 @@
+/**
+ * Blocks to be drawn on a grid.
+ * It is initialized with a color and a border is drawn of
+ * the opposite color.
+ * padding_width is a way to effectively shrink the block.
+ *
+ * draw takes an x and y coordinate which represent the row and
+ * column in the grid.
+ */
+class Block {
+	field int size;
+	field int border_width, padding_width;
+	field boolean color;
+
+	constructor Block new(int Asize, int Apadding_width,
+			int Aborder_width, boolean Acolor) {
+		let size = Asize;
+		let padding_width = Apadding_width;
+		let border_width = Aborder_width;
+		let color = Acolor;
+		return this;
+	}
+
+	method void draw(int x, int y) {
+		do Screen.setColor(color);
+		do Screen.drawRectangle(
+			x * size + padding_width,
+			y * size + padding_width,
+			x * size + size - padding_width,
+			y * size + size - padding_width
+		);
+		do Screen.setColor(~color);
+		do Screen.drawRectangle(
+			x * size + padding_width + border_width,
+			y * size + padding_width + border_width,
+			x * size + size - padding_width - border_width,
+			y * size + size - padding_width - border_width
+		);
+		return;
+	}
+
+	method void clear(int x, int y) {
+		do Screen.setColor(false);
+		do Screen.drawRectangle(
+			x * size + padding_width,
+			y * size + padding_width,
+			x * size + size - padding_width,
+			y * size + size - padding_width
+		);
+		return;
+	}
+}

@@ -1,39 +1,77 @@
-/** Draw a grid */
+/**
+ * Draw a grid and a cursor that can move around the grid.
+ * This is the start to writing Conway's Game of Life.
+ * https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+ *
+ * TODO: Let a block be "activated" by pressing
+ * spacebar while the cursor is over it. Activated blocks remain
+ * filled. Implement the logic to the Game of Life and let
+ * it run by pressing "Enter".
+ */
 class Main {
     function void main() {
-		var int key, crsr_x, crsr_y;
+		var int key, crsr_x, crsr_y,
+			grid_width, grid_height, block_size,
+			i, j;
+		var Array columns, rows;
+		var Block block, cursor;
 		let crsr_x = 0;
 		let crsr_y = 0;
+		let block_size = 32;
+		let grid_width = 512 / block_size;
+		let grid_height = 256 / block_size;
 
-		do Background.draw();
-		do Cursor.draw(crsr_x, crsr_y);
-		while (~(key = 81)) {
+		// The grid will be an array of arrays of Blocks
+		// columns = [row[Block, Block, ..], row[Block, Block...], ...]
+		let columns = Array.new(grid_width);
+		let i = 0;
+
+		// KB is a helper so I don't have to remember
+		// what the character codes are for the arrow keys.
+		// I can just do `KB.r_arr();` and it gives me `132`
+		do KB.init();
+
+		// Draw the initial grid.
+		while (i < (grid_width - 1)) {
+			let rows = Array.new(grid_height);
+			let j = 0;
+			while (j < (grid_height - 1)) {
+				let block = Block.new(block_size, 0, 1, true);
+				let rows[j] = block;
+				do block.draw(i, j);
+				let j = j + 1;
+			}
+			let columns[i] = rows;
+			let i = i + 1;
+		}
+
+		// Draw the initial cursor.
+		let cursor = Block.new(block_size, 1, 1, false);
+		let key = Keyboard.keyPressed();
+		do cursor.draw(crsr_x, crsr_y);
+
+		// Listen for keypresses and move the cursor.
+		while (~(key = KB.q())) {
 			let key = Keyboard.keyPressed();
-			do Cursor.draw(crsr_x, crsr_y);
-			do Screen.setColor(true);
-			if (key = 132) {
-				do Screen.setColor(false);
-				do Cursor.draw(crsr_x, crsr_y);
-				let crsr_x = crsr_x + 1;
-				do Cursor.draw(crsr_x, crsr_y);
+			if (key = KB.r_arr()) {
+				do cursor.clear(crsr_x, crsr_y);
+				let crsr_x = Math.min(crsr_x + 1, grid_width - 1);
+				do cursor.draw(crsr_x, crsr_y);
 			}
-			if (key = 130) {
-				do Screen.setColor(false);
-				do Cursor.draw(crsr_x, crsr_y);
-				let crsr_x = crsr_x - 1;
-				do Cursor.draw(crsr_x, crsr_y);
+			if (key = KB.u_arr()) {
+				do cursor.clear(crsr_x, crsr_y);
+				let crsr_y = Math.max(crsr_y - 1, 0);
+				do cursor.draw(crsr_x, crsr_y);
 			}
-			if (key = 131) {
-				do Screen.setColor(false);
-				do Cursor.draw(crsr_x, crsr_y);
-				let crsr_y = crsr_y - 1;
-				do Cursor.draw(crsr_x, crsr_y);
+			if (key = KB.l_arr()) {
+				do cursor.clear(crsr_x, crsr_y);
+				let crsr_x = Math.max(crsr_x - 1, 0);
+				do cursor.draw(crsr_x, crsr_y);
 			}
-			if (key = 133) {
-				do Screen.setColor(false);
-				do Cursor.draw(crsr_x, crsr_y);
-				let crsr_y = crsr_y + 1;
-				do Cursor.draw(crsr_x, crsr_y);
+			if (key = KB.d_arr()) {
+				do cursor.clear(crsr_x, crsr_y);
+				let crsr_y = Math.min(grid_height - 1, crsr_y + 1);
+				do cursor.draw(crsr_x, crsr_y);
 			}
 			do Sys.wait(100);
 		}
