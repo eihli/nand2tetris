@@ -1,3 +1,4 @@
+import re
 import unittest
 
 from tokenizer.tokenizer import tokenize
@@ -30,21 +31,12 @@ expected_output = """
 
 
 class TestJRRToken(unittest.TestCase):
-    def test_tokenize_keyword(self):
-        self.assertEqual(
-            tokenize('if'),
-            '<keyword> if </keyword>\n',
-        )
+    def setUp(self):
+        self.maxDiff = None
 
-    def test_tokenize_open_paren(self):
-        self.assertEqual(
-            tokenize('if ('),
-            '<keyword> if </keyword>\n<symbol> ( </symbol>\n',
-        )
-
-    @unittest.skip('temp')
     def test_jrr_token(self):
+        r = re.compile('\s+', re.MULTILINE)
         self.assertEqual(
-            tokenize(expected_input),
-            expected_output,
+            r.sub('', tokenize(expected_input)),
+            r.sub('', expected_output),
         )
