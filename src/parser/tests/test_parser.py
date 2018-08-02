@@ -1,3 +1,4 @@
+import re
 import unittest
 
 from parser.parser import parse
@@ -409,5 +410,20 @@ class TestParser(unittest.TestCase):
         self.assertEqual(expected_output, actual)
 
     def test_square(self):
-        actual = parse(sqr)
-        self.assertEqual(sqr_tree, actual)
+        actual = re.sub(r'\s', '', parse(sqr), flags=re.MULTILINE)
+        exp = re.sub(r'\s', '',
+                          sqr_tree, flags=re.MULTILINE)
+        from lxml import etree
+        actual = etree.fromstring(actual)
+        exp = etree.fromstring(exp)
+        actual = etree.tostring(actual, pretty_print=True).decode()
+        exp = etree.tostring(exp, pretty_print=True).decode()
+        import pdb; pdb.set_trace()
+
+        ad = actual.split('\n')
+        ed = exp.split('\n')
+        from difflib import unified_diff as ud
+        diff = '\n'.join(ud(ad, ed))
+        import pdb; pdb.set_trace()
+
+        self.assertEqual(exp, actual)

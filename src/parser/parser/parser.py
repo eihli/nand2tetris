@@ -6,6 +6,10 @@ import xml.dom.minidom as md
 ID_RE = r'[a-zA-Z_][a-zA-Z_0-9]*'
 TYPE_RE = r'(int|char|boolean|{})'.format(ID_RE)
 INT_RE = r'[0-9]+'
+OP_RE = r'[{}]'.format(''.join([
+    r'\+', r'\-', r'\*', r'\/', r'\&',
+    r'\|', r'\>', r'\<', r'\=', r'\~',
+]))
 STR_RE = r'"(.*?)"'
 TERM_KW_RE = r'(true|false|null|this)'
 EXPR_RE = r'({})'.format('|'.join([
@@ -54,6 +58,17 @@ def chomp(els):
 
 
 def parse(input_str):
+    try:
+       result = _parse(input_str)
+    except AssertionError as e:
+        import pdb, sys
+        t, v, tb = sys.exc_info()
+        pdb.post_mortem(tb)
+        raise e
+    return result
+
+
+def _parse(input_str):
     els = list(ET.fromstring(input_str).iter())[1:]
     asrt(mch, pk(els), r'class')
     out = ET.Element('class')
@@ -66,21 +81,24 @@ def parse(input_str):
     el, els = chomp(els)
     out.append(el)
 
-    el = pk(els)
-    if mch(el.text, r'(static|field)'):
+    more = mch(pk(els).text, r'(static|field)')
+    while more:
         el, els = consume_class_var_dec(els)
         out.append(el)
+        more = mch(pk(els).text, r'(static|field)')
     el = pk(els)
-    if mch(el.text, r'(constructor|function|method)'):
+    more = mch(pk(els).text, r'(constructor|function|method)')
+    while more:
         el, els = consume_subroutine_dec(els)
         out.append(el)
+        more = mch(pk(els).text, r'(constructor|function|method)')
     asrt(mch, pk(els), r'}')
     el, els = chomp(els)
     out.append(el)
-    out_str = ET.tostring(out).decode(sys.getdefaultencoding())
-    dom = md.parseString(out_str)
-    p_str = dom.toprettyxml(indent='  ')
-    return '\n'.join(p_str.split('\n')[1:])
+    out_str = ET.tostring(
+        out, short_empty_elements=False
+    ).decode(sys.getdefaultencoding())
+    return out_str
 
 
 def consume_class_var_dec(els):
@@ -121,9 +139,8 @@ def consume_subroutine_dec(els):
     asrt(mch, pk(els), r'\(')
     el, els = chomp(els)
     out.append(el)
-    if mch(pk(els).text, TYPE_RE):
-        el, els = consume_parameter_list(els)
-        out.append(el)
+    el, els = consume_parameter_list(els)
+    out.append(el)
     asrt(mch, pk(els), r'\)')
     el, els = chomp(els)
     out.append(el)
@@ -132,14 +149,33 @@ def consume_subroutine_dec(els):
     return out, els
 
 
+def consume_parameter_list(els):
+    out = ET.Element('parameterList')
+    if mch(pk(els).text, TYPE_RE):
+        el, els = chomp(els)
+        out.append(el)
+        el, els = asrt_chmp(els, ID_RE)
+        out.append(el)
+        more = mch(pk(els).text, r',')
+        while more:
+            el, els = chomp(els)
+            out.append(el)
+            el, els = asrt_chmp(els, ID_RE)
+            out.append(el)
+            more = mch(pk(els).text, r',')
+    return out, els
+
+
 def consume_subroutine_body(els):
     out = ET.Element('subroutineBody')
     asrt(mch, pk(els), r'\{')
     el, els = chomp(els)
     out.append(el)
-    if mch(pk(els).text, r'var'):
+    more = mch(pk(els).text, r'var')
+    while more:
         el, els = consume_var_dec(els)
         out.append(el)
+        more = mch(pk(els).text, r'var')
     el, els = consume_statements(els)
     out.append(el)
     asrt(mch, pk(els), r'\}')
@@ -166,7 +202,7 @@ def consume_var_dec(els):
         asrt(mch, pk(els), ID_RE)
         el, els = chomp(els)
         out.append(el)
-        more = mch(pk(els), r',')
+        more = mch(pk(els).text, r',')
     asrt(mch, pk(els), r';')
     el, els = chomp(els)
     out.append(el)
@@ -192,8 +228,8 @@ def consume_statements(els):
             el, els = consume_return_statement(els)
         else:
             raise Exception("Intentionally left blank...")
+        out.append(el)
         more = mch(pk(els).text, rgx)
-    el, els = asrt_chmp(els, r'}')
     return out, els
 
 
@@ -203,9 +239,18 @@ def consume_let_statement(els):
     out.append(el)
     el, els = asrt_chmp(els, ID_RE)
     out.append(el)
+    if mch(pk(els).text, r'\['):
+        el, els = chomp(els)
+        out.append(el)
+        el, els = consume_expr(els)
+        out.append(el)
+        el, els = asrt_chmp(els, r'\]')
+        out.append(el)
     el, els = asrt_chmp(els, r'=')
     out.append(el)
-    el, els = consume_term(els)
+    el, els = consume_expr(els)
+    out.append(el)
+    el, els = asrt_chmp(els, r'\;')
     out.append(el)
     return out, els
 
@@ -232,10 +277,17 @@ def consume_term(els):
             out.append(el)
         elif mch(pk(cdr(els)).text, r'\.'):
             el, els = consume_subroutine_call(els)
-            out.append(el)
+            out.extend(el)
         else:
             el, els = chomp(els)
             out.append(el)
+    if mch(pk(els).text, r'\('):
+        el, els = chomp(els)
+        out.append(el)
+        el, els = consume_expr(els)
+        out.append(el)
+        el, els = asrt_chmp(els, r'\)')
+        out.append(el)
     return out, els
 
 
@@ -253,24 +305,68 @@ def consume_subroutine_call(els):
         els, out = cnsm_apnd(els, out, consume_expr_list)
         el, els = asrt_chmp(els, r'\)')
         out.append(el)
-        el, els = asrt_chmp(els, r'\;')
-        out.append(el)
-    return out, els
+    return out.getchildren(), els
 
 
 def consume_expr_list(els):
-    if mch(pk(els).text, EXPR_RE):
-        pass
-    else:
-        return None, els
+    out = ET.Element('expressionList')
+    more = mch(pk(els).text, EXPR_RE)
+    if more:
+        el, els = consume_expr(els)
+        out.append(el)
+    more = mch(pk(els).text, r',')
+    while more:
+        el, els = chomp(els)
+        out.append(el)
+        el, els = consume_expr(els)
+        out.append(el)
+        more = mch(pk(els).text, r',')
+    return out, els
 
 
 def consume_expr(els):
-    pass
+    out = ET.Element('expression')
+    els, out = cnsm_apnd(els, out, consume_term)
+    if mch(pk(els).text, OP_RE):
+        el, els = chomp(els)
+        out.append(el)
+        el, els = consume_term(els)
+        out.append(el)
+    more = mch(pk(els).text, r',')
+    while more:
+        el, els = chomp(els)
+        out.append(el)
+        els, out = cnsm_apnd(els, out, consume_term)
+        out.append(el)
+        more = mch(pk(els).text, r',')
+    return out, els
 
 
 def consume_if_statement(els):
     out = ET.Element('ifStatement')
+    el, els = asrt_chmp(els, r'if')
+    out.append(el)
+    el, els = asrt_chmp(els, r'\(')
+    out.append(el)
+    el, els = consume_expr(els)
+    out.append(el)
+    el, els = asrt_chmp(els, r'\)')
+    out.append(el)
+    el, els = asrt_chmp(els, r'\{')
+    out.append(el)
+    el, els = consume_statements(els)
+    out.append(el)
+    el, els = asrt_chmp(els, r'\}')
+    out.append(el)
+    if mch(pk(els).text, r'else'):
+        el, els = chomp(els)
+        out.append(el)
+        el, els = asrt_chmp(els, r'\{')
+        out.append(el)
+        el, els = consume_statements(els)
+        out.append(el)
+        el, els = asrt_chmp(els, r'\}')
+        out.append(el)
     return out, els
 
 
@@ -281,11 +377,22 @@ def consume_while_statement(els):
 
 def consume_do_statement(els):
     out = ET.Element('doStatement')
+    el, els = asrt_chmp(els, r'do')
+    out.append(el)
+    el, els = consume_subroutine_call(els)
+    out.extend(el)
+    el, els = asrt_chmp(els, r';')
+    out.append(el)
     return out, els
 
 
 def consume_return_statement(els):
     out = ET.Element('returnStatement')
+    el, els = asrt_chmp(els, r'return')
+    out.append(el)
+    els, out = cnsm_apnd(els, out, consume_expr)
+    el, els = asrt_chmp(els, r';')
+    out.append(el)
     return out, els
 
 
