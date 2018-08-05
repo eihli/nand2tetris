@@ -3,10 +3,11 @@ import sys
 from tokenizer import strip_comments, tokenize
 from parser import parse
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 
 
 def indent(node, depth=0, ind='  '):
-    newl = '' if node.text else '\r'
+    newl = '' if node.text else '\r\n'
     out = ind * depth + '<{}>{}'.format(
         node.tag,
         newl,
@@ -14,10 +15,10 @@ def indent(node, depth=0, ind='  '):
     for child in node:
         out += indent(child, depth + 1, ind=ind)
     if node.text:
-        out += '{}'.format(node.text)
+        out += '{}'.format(escape(node.text))
     else:
         out += ind * depth
-    out += '</{}>\r'.format(node.tag)
+    out += '</{}>\r\n'.format(node.tag)
     return out
 
 

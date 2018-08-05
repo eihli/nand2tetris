@@ -65,8 +65,7 @@ def strip_comments(input_str):
 
 def tokenize(input_str):
     rest = input_str.lstrip()
-    out = '<tokens>\n'
-    token = None
+    out = '<tokens>\r\n'
     # [out, token, rest :=
     #  tokenized input_str (xml) so far,
     #  next token (xml),
@@ -75,7 +74,7 @@ def tokenize(input_str):
         tag, text, to_consume = get_next_token(rest)
         out += format_token(tag, text)
         rest = consume_next_token(to_consume, rest)
-    return out + '</tokens>'
+    return out + '</tokens>\r\n'
 
 
 def get_next_token(s):
@@ -97,7 +96,7 @@ def consume_next_token(token, s):
 
 
 def format_token(tag, text):
-    return '<{}> {} </{}>\n'.format(tag, escape(text), tag)
+    return '<{}> {} </{}>\r\n'.format(tag, escape(text), tag)
 
 
 if __name__ == "__main__":
