@@ -42,7 +42,7 @@ TOKENS = [
     Token(re.compile(kw_re).match, 'keyword', g0),
     Token(re.compile(sym_re).match, 'symbol', g0),
     Token(re.compile(r'[a-zA-Z_][a-zA-Z_0-9]*').match, 'identifier', g0),
-    Token(re.compile(r'[0-9]').match, 'integerConstant', g0),
+    Token(re.compile(r'[0-9]+').match, 'integerConstant', g0),
     Token(re.compile(r'"(.*?)"').match, 'stringConstant', g1),
 ]
 

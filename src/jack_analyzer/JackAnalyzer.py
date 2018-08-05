@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 
 def indent(node, depth=0, ind='  '):
-    newl = '' if node.text else '\n'
+    newl = '' if node.text else '\r'
     out = ind * depth + '<{}>{}'.format(
         node.tag,
         newl,
@@ -17,7 +17,7 @@ def indent(node, depth=0, ind='  '):
         out += '{}'.format(node.text)
     else:
         out += ind * depth
-    out += '</{}>\n'.format(node.tag)
+    out += '</{}>\r'.format(node.tag)
     return out
 
 
@@ -40,8 +40,9 @@ def parse_file(filename):
     et = ET.fromstring(parsed)
     out = indent(et)
     path = Path(filename)
+    stem = path.stem
     grammar_outfile = str(path.parents[0].joinpath(
-        path.stem + '.xml'
+        '{}.xml'.format(stem[:-1])
     ))
     with open(grammar_outfile, 'w') as f:
         f.write(out)
