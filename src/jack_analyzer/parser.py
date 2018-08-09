@@ -84,7 +84,13 @@ def is_text_in(el, it):
     return text in it
 
 
-# Terminal elements
+def is_unary_op(els):
+    el = pk(els)
+    return (
+        el.tag == SYMBOL
+        and is_text_in(el, UNARY_OPS)
+    )
+
 
 def is_keyword_constant(els):
     el = pk(els)
@@ -94,22 +100,6 @@ def is_keyword_constant(els):
     )
 
 
-def consume_keyword_constant(els):
-    return car(els), cdr(els)
-
-
-def is_unary_op(els):
-    el = pk(els)
-    return (
-        el.tag == SYMBOL
-        and is_text_in(el, UNARY_OPS)
-    )
-
-
-def consume_unary_op(els):
-    return car(els), cdr(els)
-
-
 def is_op(els):
     el = pk(els)
     return (
@@ -117,26 +107,13 @@ def is_op(els):
         and is_text_in(el, OPS)
     )
 
-
-def consume_op(els):
-    return car(els), cdr(els)
-
-
 def is_var_name(els):
     return is_identifier(car(els))
-
-
-def consume_var_name(els):
-    return car(els), cdr(els)
 
 
 def is_class_name(els):
     assert pk(els).tag == IDENTIFIER
     return pk(els).tag == IDENTIFIER
-
-
-def consume_class_name(els):
-    return car(els), cdr(els)
 
 
 def is_type(els):
@@ -145,23 +122,6 @@ def is_type(els):
         is_class_name(els)
         or is_text_in(el, TYPE_CONSTANTS)
     )
-
-
-def consume_type(els):
-    return car(els), cdr(els)
-
-
-def consume_any(els):
-    return car(els), cdr(els)
-
-
-def is_var_dec(els):
-    el = pk(els)
-    return el.tag == VAR
-
-
-def create_var_dec():
-    return ET.Element('varDec')
 
 
 def is_comma(els):
@@ -176,12 +136,13 @@ def is_comma_or_close_paren(els):
     return is_comma(els) or is_close_paren(els)
 
 
+def is_var_dec(els):
+    el = pk(els)
+    return el.tag == VAR
+
+
 def is_close_paren(els):
     return car(els).text.strip == ')'
-
-
-def cnsm_apnd_any(els, out):
-    return cnsm_apnd(els, out, consume_any)
 
 
 def is_semi_colon(els):
@@ -192,70 +153,12 @@ def is_semi_colon(els):
     )
 
 
-def asrt_cnsm_apnd(fn, els, out):
-    assert fn(els)
-    return cnsm_apnd(els, out)
-
-
-def consume_var_dec(els):
-    out = ET.Element('varDec')
-    el, els = chomp(els)
-    out.append(el)
-    asrt(mch, pk(els), TYPE_RE)
-    el, els = chomp(els)
-    out.append(el)
-    asrt(mch, pk(els), ID_RE)
-    el, els = chomp(els)
-    out.append(el)
-    more = mch(pk(els).text, r',')
-    while more:
-        el, els = chomp(els)
-        out.append(el)
-        asrt(mch, pk(els), ID_RE)
-        el, els = chomp(els)
-        out.append(el)
-        more = mch(pk(els).text, r',')
-    asrt(mch, pk(els), r';')
-    el, els = chomp(els)
-    out.append(el)
-    return out, els
-
-
 def is_string_constant(els):
     return pk(els).tag == STRING_CONSTANT
 
 
 def is_integer_constant(els):
     return pk(els).tag == INTEGER_CONSTANT
-
-
-def consume_expression_list(els):
-    out = ET.Element('expressionList')
-    el, els = consume_expression(els)
-    if el:
-        out.append(el)
-    while is_comma_or_close_paren(els):
-        while is_comma_or_close_paren(els):
-            el, els = chomp(els)
-            out.append(el)
-        el, els = consume_expression(els)
-        if el:
-            out.append(el)
-    return els, out
-
-
-def consume_expression(els):
-    out = ET.Element('expression')
-    sub_el, els = consume_term(els)
-    if sub_el:
-        out.append(sub_el)
-    more = is_operator(els)
-
-    while more:
-        els, out = cnsm_apnd_any(els, out)
-        els, out = cnsm_apnd(els, out, consume_term)
-        more = is_operator(els)
-    return out, els
 
 
 def is_operator(els):
@@ -268,43 +171,6 @@ def is_operator(els):
     return p
 
 
-def consume_term(els):
-    out = ET.Element('term')
-    if is_integer_constant(els):
-        els, out = cnsm_apnd_any(els, out)
-    elif is_string_constant(els):
-        els, out = cnsm_apnd_any(els, out)
-    elif is_keyword_constant(els):
-        els, out = cnsm_apnd_any(els, out)
-    elif is_var_name(els) and pk(cdr(els)).text.strip() == '[':
-        els, out = cnsm_apnd_any(els, out)
-        els, out = cnsm_apnd_any(els, out)
-        el, els = consume_expression(els)
-        if el:
-            out.append(el)
-        els, out = cnsm_apnd_any(els, out)
-    elif is_subroutine_call(els):
-        el, els = consume_subroutine_call(els)
-        out.extend(el)
-    elif is_var_name(els):
-        els, out = cnsm_apnd(els, out, consume_var_name)
-    elif pk(els).text.strip() == '(':
-        els, out = cnsm_apnd_any(els, out)
-        el, els = consume_expression(els)
-        if el:
-            out.append(el)
-        assert pk(els).text.strip() == ')'
-        els, out = cnsm_apnd_any(els, out)
-    elif is_unary_op(els):
-        els, out = cnsm_apnd_any(els, out)
-        el, els = consume_term(els)
-        out.append(el)
-    else:
-        # Empty Term
-        pass
-    return out, els
-
-
 def is_identifier(el):
     return el.tag == IDENTIFIER
 
@@ -314,6 +180,43 @@ def is_subroutine_call(els):
         is_identifier(car(els))
         and car(cdr(els)).text.strip() == '.'
     )
+
+
+def consume_keyword_constant(els):
+    return car(els), cdr(els)
+
+
+def consume_unary_op(els):
+    return car(els), cdr(els)
+
+
+def consume_op(els):
+    return car(els), cdr(els)
+
+
+def consume_var_name(els):
+    return car(els), cdr(els)
+
+
+def consume_class_name(els):
+    return car(els), cdr(els)
+
+
+def consume_type(els):
+    return car(els), cdr(els)
+
+
+def consume_any(els):
+    return car(els), cdr(els)
+
+
+def cnsm_apnd_any(els, out):
+    return cnsm_apnd(els, out, consume_any)
+
+
+def asrt_cnsm_apnd(fn, els, out):
+    assert fn(els)
+    return cnsm_apnd(els, out)
 
 
 def pk(lst):
@@ -462,6 +365,96 @@ def consume_subroutine_body(els):
     el, els = chomp(els)
     out.append(el)
 
+    return out, els
+
+
+def consume_var_dec(els):
+    out = ET.Element('varDec')
+    el, els = chomp(els)
+    out.append(el)
+    asrt(mch, pk(els), TYPE_RE)
+    el, els = chomp(els)
+    out.append(el)
+    asrt(mch, pk(els), ID_RE)
+    el, els = chomp(els)
+    out.append(el)
+    more = mch(pk(els).text, r',')
+    while more:
+        el, els = chomp(els)
+        out.append(el)
+        asrt(mch, pk(els), ID_RE)
+        el, els = chomp(els)
+        out.append(el)
+        more = mch(pk(els).text, r',')
+    asrt(mch, pk(els), r';')
+    el, els = chomp(els)
+    out.append(el)
+    return out, els
+
+
+def consume_expression_list(els):
+    out = ET.Element('expressionList')
+    el, els = consume_expression(els)
+    if el:
+        out.append(el)
+    while is_comma_or_close_paren(els):
+        while is_comma_or_close_paren(els):
+            el, els = chomp(els)
+            out.append(el)
+        el, els = consume_expression(els)
+        if el:
+            out.append(el)
+    return els, out
+
+
+def consume_expression(els):
+    out = ET.Element('expression')
+    sub_el, els = consume_term(els)
+    if sub_el:
+        out.append(sub_el)
+    more = is_operator(els)
+
+    while more:
+        els, out = cnsm_apnd_any(els, out)
+        els, out = cnsm_apnd(els, out, consume_term)
+        more = is_operator(els)
+    return out, els
+
+
+def consume_term(els):
+    out = ET.Element('term')
+    if is_integer_constant(els):
+        els, out = cnsm_apnd_any(els, out)
+    elif is_string_constant(els):
+        els, out = cnsm_apnd_any(els, out)
+    elif is_keyword_constant(els):
+        els, out = cnsm_apnd_any(els, out)
+    elif is_var_name(els) and pk(cdr(els)).text.strip() == '[':
+        els, out = cnsm_apnd_any(els, out)
+        els, out = cnsm_apnd_any(els, out)
+        el, els = consume_expression(els)
+        if el:
+            out.append(el)
+        els, out = cnsm_apnd_any(els, out)
+    elif is_subroutine_call(els):
+        el, els = consume_subroutine_call(els)
+        out.extend(el)
+    elif is_var_name(els):
+        els, out = cnsm_apnd(els, out, consume_var_name)
+    elif pk(els).text.strip() == '(':
+        els, out = cnsm_apnd_any(els, out)
+        el, els = consume_expression(els)
+        if el:
+            out.append(el)
+        assert pk(els).text.strip() == ')'
+        els, out = cnsm_apnd_any(els, out)
+    elif is_unary_op(els):
+        els, out = cnsm_apnd_any(els, out)
+        el, els = consume_term(els)
+        out.append(el)
+    else:
+        # Empty Term
+        pass
     return out, els
 
 
