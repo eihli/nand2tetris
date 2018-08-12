@@ -107,6 +107,7 @@ def is_op(els):
         and is_text_in(el, OPS)
     )
 
+
 def is_var_name(els):
     return is_identifier(car(els))
 
