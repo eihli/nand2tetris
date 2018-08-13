@@ -6,6 +6,21 @@ OP_SYMBOLS = [
 ]
 
 
+def take_until(iterable, until_fn):
+    for el, p in [(el, until_fn(el)) for el in iterable]:
+        if p:
+            break
+        else:
+            yield el
+
+
+def index_of(iterable, p):
+    return next(
+        (i for i, el in enumerate(iterable) if p(el)),
+        None
+    )
+
+
 class Node:
     def __init__(self, element):
         self.element = element
@@ -22,6 +37,15 @@ class Node:
     @property
     def text(self):
         return self.element.text.strip()
+
+    def split(self, node_class):
+        # Ignore the let and the ;
+        els = list(self.element)[1:-1]
+        op_idx = index_of(
+            els,
+            lambda el: isinstance(el_to_node(el), OpNode)
+        )
+        return els[:op_idx], els[op_idx + 1:]
 
 
 class TokenTree:
@@ -75,6 +99,10 @@ class Expr(Node):
             return None
 
 
+class LetStatement(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
@@ -89,6 +117,8 @@ def el_to_node(el):
         return Expr(el)
     elif el.tag == 'term':
         return Term(el)
+    elif el.tag == 'letStatement':
+        return LetStatement(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -132,6 +162,10 @@ class CodeGenerator:
         elif isinstance(node, Term):
             for child in node:
                 self.generate(child)
+        elif isinstance(node, LetStatement):
+            rhs, lhs = node.split(OpNode)
+            self.generate(lhs)
+            self.generate(rhs)
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__

@@ -81,3 +81,28 @@ class TestCompiler(ut.TestCase):
             self.stream.getvalue(),
             'push constant 5\n',
         )
+
+    def test_let(self):
+        src = '\n'.join([
+            '<letStatement>',
+            '<keyword> let </keyword>',
+            '<identifier> s </identifier>',
+            '<symbol> = </symbol>',
+            '<expression>',
+            '<term>',
+            '<integerConstant> 5 </integerConstant>',
+            '</term>',
+            '</expression>',
+            '<symbol> ; </symbol>',
+            '</letStatement>',
+        ])
+        el = ET.fromstring(src)
+        node = cp.el_to_node(el)
+        self.generator.generate(node)
+        self.assertEqual(
+            self.stream.getvalue(),
+            '\n'.join([
+                'push constant 5',
+                'pop local 1',
+            ])
+        )
