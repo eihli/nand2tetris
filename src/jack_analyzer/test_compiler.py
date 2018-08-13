@@ -47,9 +47,13 @@ class TestCompiler(ut.TestCase):
     def test_expr(self):
         src = '\n'.join([
             '<expression>',
+            '<term>',
             '<integerConstant> 8 </integerConstant>',
+            '</term>',
             '<symbol> * </symbol>',
+            '<term>',
             '<integerConstant> 5 </integerConstant>',
+            '</term>',
             '</expression>',
         ])
         el = ET.fromstring(src)
@@ -62,4 +66,18 @@ class TestCompiler(ut.TestCase):
                 'push constant 5',
                 'mult\n',
             ])
+        )
+
+    def test_term(self):
+        src = '\n'.join([
+            '<term>',
+            '<integerConstant> 5 </integerConstant>',
+            '</term>',
+        ])
+        el = ET.fromstring(src)
+        node = cp.el_to_node(el)
+        self.generator.generate(node)
+        self.assertEqual(
+            self.stream.getvalue(),
+            'push constant 5\n',
         )

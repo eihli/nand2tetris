@@ -10,6 +10,11 @@ class Node:
     def __init__(self, element):
         self.element = element
 
+    def __iter__(self):
+        return iter(list(
+            el_to_node(e) for e in self.element
+        ))
+
     @property
     def type(self):
         return self.element.tag
@@ -47,6 +52,10 @@ class Mult(OpNode):
         return 'mult'
 
 
+class Term(Node):
+    pass
+
+
 class Expr(Node):
     def __init__(self, element):
         super(Expr, self).__init__(element)
@@ -78,6 +87,8 @@ def el_to_node(el):
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
         return Expr(el)
+    elif el.tag == 'term':
+        return Term(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -118,6 +129,9 @@ class CodeGenerator:
                     self.generate(term)
                 for op in ops:
                     self.generate(op)
+        elif isinstance(node, Term):
+            for child in node:
+                self.generate(child)
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
