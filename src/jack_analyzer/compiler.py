@@ -5,6 +5,10 @@ OP_SYMBOLS = [
     '-', '*', '=',
 ]
 
+KEYWORD_CONSTANTS = [
+    'true', 'false', 'null', 'this',
+]
+
 
 class SymbolTable:
     cls = {}
@@ -112,6 +116,10 @@ class LetStatement(Node):
         return els[:op_idx], els[op_idx + 1]
 
 
+class KeywordConstant(Node):
+    pass
+
+
 class Identifier(Node):
     pass
 
@@ -140,6 +148,8 @@ def el_to_node(el):
         return LetStatement(el)
     elif el.tag == 'identifier':
         return Identifier(el)
+    elif el.tag == 'keyword':
+        return KeywordConstant(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -192,10 +202,18 @@ class CodeGenerator:
                 raise Exception("Not handling array letStatement")
             else:
                 node = el_to_node(rhs[0])
-                self.emit('pop {} {}'.format(
+                self.emit('pop {} {}\n'.format(
                     self.sym_tab[node.text]['kind'],
                     self.sym_tab[node.text]['number'],
                 ))
+        elif isinstance(node, KeywordConstant):
+            if node.text == 'null' or node.text == 'false':
+                self.emit('push constant 0\n')
+            elif node.text == 'true':
+                self.emit('push constant 1\n')
+                self.emit('neg\n')
+            else:
+                self.emit('push argument 0\n')
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__

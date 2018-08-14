@@ -90,7 +90,7 @@ class TestCompiler(ut.TestCase):
             '<symbol> = </symbol>',
             '<expression>',
             '<term>',
-            '<integerConstant> 5 </integerConstant>',
+            '<keyword> null </keyword>',
             '</term>',
             '</expression>',
             '<symbol> ; </symbol>',
@@ -108,7 +108,7 @@ class TestCompiler(ut.TestCase):
         self.assertEqual(
             self.stream.getvalue(),
             '\n'.join([
-                'push constant 5',
-                'pop static 2',
+                'push constant 0',
+                'pop static 2\n',
             ])
         )
