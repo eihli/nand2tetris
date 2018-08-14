@@ -30,7 +30,7 @@ class TestCompiler(ut.TestCase):
                 'push constant 102',
                 'String.appendChar 2',
                 'push constant 111',
-                'String.appendChar 2',
+                'String.appendChar 2\n',
             ])
         )
 
@@ -110,5 +110,46 @@ class TestCompiler(ut.TestCase):
             '\n'.join([
                 'push constant 0',
                 'pop static 2\n',
+            ])
+        )
+
+    def test_let_array(self):
+        src = '\n'.join([
+            '<letStatement>',
+            '<keyword> let </keyword>',
+            '<identifier> s </identifier>',
+            '<symbol> [ </symbol>',
+            '<expression>',
+            '<term>',
+            '<integerConstant> 19 </integerConstant>',
+            '</term>',
+            '</expression>',
+            '<symbol> = </symbol>',
+            '<expression>',
+            '<term>',
+            '<keyword> null </keyword>',
+            '</term>',
+            '</expression>',
+            '<symbol> ; </symbol>',
+            '</letStatement>',
+        ])
+        el = ET.fromstring(src)
+        node = cp.el_to_node(el)
+        self.generator.sym_tab.mth = {
+            's': {
+                'kind': 'local',
+                'number': '2',
+            }
+        }
+        self.generator.generate(node)
+        self.assertEqual(
+            self.stream.getvalue(),
+            '\n'.join([
+                'push local 2',
+                'push constant 19',
+                'add',
+                'pop pointer 1',
+                'push constant 0',
+                'pop that 0\n',
             ])
         )

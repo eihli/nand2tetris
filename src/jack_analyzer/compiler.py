@@ -128,6 +128,10 @@ class EQ(Node):
     pass
 
 
+class OpenBracket(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
@@ -138,6 +142,8 @@ def el_to_node(el):
             return Mult(el)
         elif el.text.strip() == '=':
             return EQ(el)
+        elif el.text.strip() == '[':
+            return OpenBracket(el)
         else:
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
@@ -165,7 +171,15 @@ class CodeGenerator:
         self.sym_tab = SymbolTable()
 
     def emit(self, txt):
-        self.stream.write(txt)
+        normalized = txt.strip().split('\n')
+        if len(normalized) > 1:
+            self.emit_many(normalized)
+        else:
+            self.stream.write(txt.replace('\n', '') + '\n')
+
+    def emit_many(self, txts):
+        for txt in txts:
+            self.emit(txt)
 
     def generate(self, node):
         if isinstance(node, IntegerNode):
@@ -196,11 +210,22 @@ class CodeGenerator:
                 self.generate(child)
         elif isinstance(node, LetStatement):
             rhs, lhs = node.split(OpNode)
-            self.generate(el_to_node(lhs))
             if len(rhs) > 1:
-                # array
-                raise Exception("Not handling array letStatement")
+                var = el_to_node(rhs[0])
+                expr = el_to_node(rhs[2])
+                self.emit_many([
+                    'push {} {}'.format(
+                        self.sym_tab[var.text]['kind'],
+                        self.sym_tab[var.text]['number'],
+                    )
+                ])
+                self.generate(expr)
+                self.emit('add')
+                self.emit('pop pointer 1')
+                self.generate(el_to_node(lhs))
+                self.emit('pop that 0\n')
             else:
+                self.generate(el_to_node(lhs))
                 node = el_to_node(rhs[0])
                 self.emit('pop {} {}\n'.format(
                     self.sym_tab[node.text]['kind'],
