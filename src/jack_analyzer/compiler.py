@@ -2,8 +2,19 @@ import itertools as it
 import xml.etree.ElementTree as ET
 
 OP_SYMBOLS = [
-    '-', '*',
+    '-', '*', '=',
 ]
+
+
+class SymbolTable:
+    cls = {}
+    mth = {}
+
+    def __getattr__(self, name):
+        return self.mth.get(name, None) or self.cls.get(name, None)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
 
 
 def take_until(iterable, until_fn):
@@ -37,15 +48,6 @@ class Node:
     @property
     def text(self):
         return self.element.text.strip()
-
-    def split(self, node_class):
-        # Ignore the let and the ;
-        els = list(self.element)[1:-1]
-        op_idx = index_of(
-            els,
-            lambda el: isinstance(el_to_node(el), OpNode)
-        )
-        return els[:op_idx], els[op_idx + 1:]
 
 
 class TokenTree:
@@ -100,6 +102,21 @@ class Expr(Node):
 
 
 class LetStatement(Node):
+    def split(self, node_class):
+        # Ignore the let and the ;
+        els = list(self.element)[1:-1]
+        op_idx = index_of(
+            els,
+            lambda el: isinstance(el_to_node(el), EQ)
+        )
+        return els[:op_idx], els[op_idx + 1]
+
+
+class Identifier(Node):
+    pass
+
+
+class EQ(Node):
     pass
 
 
@@ -111,6 +128,8 @@ def el_to_node(el):
     elif el.tag == 'symbol':
         if el.text.strip() == '*':
             return Mult(el)
+        elif el.text.strip() == '=':
+            return EQ(el)
         else:
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
@@ -119,6 +138,8 @@ def el_to_node(el):
         return Term(el)
     elif el.tag == 'letStatement':
         return LetStatement(el)
+    elif el.tag == 'identifier':
+        return Identifier(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -131,6 +152,7 @@ class CodeGenerator:
     """
     def __init__(self, stream):
         self.stream = stream
+        self.sym_tab = SymbolTable()
 
     def emit(self, txt):
         self.stream.write(txt)
@@ -164,8 +186,16 @@ class CodeGenerator:
                 self.generate(child)
         elif isinstance(node, LetStatement):
             rhs, lhs = node.split(OpNode)
-            self.generate(lhs)
-            self.generate(rhs)
+            self.generate(el_to_node(lhs))
+            if len(rhs) > 1:
+                # array
+                raise Exception("Not handling array letStatement")
+            else:
+                node = el_to_node(rhs[0])
+                self.emit('pop {} {}'.format(
+                    self.sym_tab[node.text]['kind'],
+                    self.sym_tab[node.text]['number'],
+                ))
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__

@@ -98,11 +98,17 @@ class TestCompiler(ut.TestCase):
         ])
         el = ET.fromstring(src)
         node = cp.el_to_node(el)
+        self.generator.sym_tab.mth = {
+            's': {
+                'kind': 'static',
+                'number': '2',
+            }
+        }
         self.generator.generate(node)
         self.assertEqual(
             self.stream.getvalue(),
             '\n'.join([
                 'push constant 5',
-                'pop local 1',
+                'pop static 2',
             ])
         )
