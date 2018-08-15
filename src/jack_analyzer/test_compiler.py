@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import compiler as cp
 
 
+@ut.skip('foo')
 class TestCompiler(ut.TestCase):
     def setUp(self):
         self.stream = io.StringIO()
@@ -151,5 +152,41 @@ class TestCompiler(ut.TestCase):
                 'pop pointer 1',
                 'push constant 0',
                 'pop that 0\n',
+            ])
+        )
+
+
+class TestFoo(ut.TestCase):
+    def setUp(self):
+        self.stream = io.StringIO()
+        self.generator = cp.CodeGenerator(self.stream)
+
+    def test_subroutine_call(self):
+        src = '\n'.join([
+            '<expression>',
+            '<term>',
+            '<identifier> SquareGame </identifier>',
+            '<symbol> . </symbol>',
+            '<identifier> new </identifier>',
+            '<symbol> ( </symbol>',
+            '<expressionList>',
+            '<expression>',
+            '<term>',
+            '<integerConstant> 0 </integerConstant>',
+            '</term>',
+            '</expression>',
+            '</expressionList>',
+            '<symbol> ) </symbol>',
+            '</term>',
+            '</expression>',
+        ])
+        et = ET.fromstring(src)
+        node = cp.el_to_node(et)
+        self.generator.generate(node)
+        self.assertEqual(
+            self.stream.getvalue(),
+            '\n'.join([
+                'push constant 0',
+                'call SquareGame.new 1',
             ])
         )

@@ -1,6 +1,7 @@
 import itertools as it
 import xml.etree.ElementTree as ET
 
+
 OP_SYMBOLS = [
     '-', '*', '=',
 ]
@@ -83,13 +84,16 @@ class Mult(OpNode):
 
 
 class Term(Node):
-    pass
+    @property
+    def is_subroutine_call(self):
+        if isinstance(list(self)[1], Node):
+            import pdb; pdb.set_trace()
 
 
 class Expr(Node):
     def __init__(self, element):
         super(Expr, self).__init__(element)
-        self.children = [el_to_node(e) for e in list(element)]
+        self.children = list(self)
 
     @property
     def first_term(self):
@@ -132,6 +136,22 @@ class OpenBracket(Node):
     pass
 
 
+class OpenParen(Node):
+    pass
+
+
+class CloseParen(Node):
+    pass
+
+
+class ExprList(Node):
+    pass
+
+
+class Period(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
@@ -144,6 +164,12 @@ def el_to_node(el):
             return EQ(el)
         elif el.text.strip() == '[':
             return OpenBracket(el)
+        elif el.text.strip() == '.':
+            return Period(el)
+        elif el.text.strip() == '(':
+            return OpenParen(el)
+        elif el.text.strip() == ')':
+            return CloseParen(el)
         else:
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
@@ -156,6 +182,8 @@ def el_to_node(el):
         return Identifier(el)
     elif el.tag == 'keyword':
         return KeywordConstant(el)
+    elif el.tag == 'expressionList':
+        return ExprList(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -206,6 +234,14 @@ class CodeGenerator:
                 for op in ops:
                     self.generate(op)
         elif isinstance(node, Term):
+            children = list(node)
+            if len(children) > 1:
+                # subroutine call or array access
+                symbol = children[1]
+                if isinstance(symbol, Period):
+                    raise Exception("PERIOD")
+                else:
+                    raise Exception("ARRAY")
             for child in node:
                 self.generate(child)
         elif isinstance(node, LetStatement):
