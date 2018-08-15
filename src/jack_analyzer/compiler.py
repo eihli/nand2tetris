@@ -46,6 +46,9 @@ class Node:
             el_to_node(e) for e in self.element
         ))
 
+    def __len__(self):
+        return len(self.element)
+
     @property
     def type(self):
         return self.element.tag
@@ -239,11 +242,23 @@ class CodeGenerator:
                 # subroutine call or array access
                 symbol = children[1]
                 if isinstance(symbol, Period):
-                    raise Exception("PERIOD")
+                    args = children[4]
+                    self.generate(args)
+                    class_name = children[0].text
+                    subroutine_name = children[2].text
+                    num_args = len(children[4])
+                    self.emit_many([
+                        'call {}.{} {}'.format(
+                            class_name,
+                            subroutine_name,
+                            num_args
+                        )
+                    ])
                 else:
                     raise Exception("ARRAY")
-            for child in node:
-                self.generate(child)
+            else:
+                for child in node:
+                    self.generate(child)
         elif isinstance(node, LetStatement):
             rhs, lhs = node.split(OpNode)
             if len(rhs) > 1:
@@ -275,6 +290,9 @@ class CodeGenerator:
                 self.emit('neg\n')
             else:
                 self.emit('push argument 0\n')
+        elif isinstance(node, ExprList):
+            for expr in node:
+                self.generate(expr)
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__

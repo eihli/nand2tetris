@@ -187,6 +187,6 @@ class TestFoo(ut.TestCase):
             self.stream.getvalue(),
             '\n'.join([
                 'push constant 0',
-                'call SquareGame.new 1',
+                'call SquareGame.new 1\n',
             ])
         )
