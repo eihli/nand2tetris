@@ -5,7 +5,6 @@ import xml.etree.ElementTree as ET
 import compiler as cp
 
 
-@ut.skip('foo')
 class TestCompiler(ut.TestCase):
     def setUp(self):
         self.stream = io.StringIO()
