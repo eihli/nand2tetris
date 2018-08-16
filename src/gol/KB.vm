@@ -1,0 +1,28 @@
+function KB.init 0
+push constant 81
+pop static 0
+push constant 130
+pop static 2
+push constant 131
+pop static 3
+push constant 133
+pop static 4
+push constant 132
+pop static 1
+push constant 0
+return
+function KB.q 0
+push static 0
+return
+function KB.r_arr 0
+push static 1
+return
+function KB.l_arr 0
+push static 2
+return
+function KB.u_arr 0
+push static 3
+return
+function KB.d_arr 0
+push static 4
+return
