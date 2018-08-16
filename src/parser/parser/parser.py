@@ -1,7 +1,7 @@
 import re
 import sys
 import xml.etree.ElementTree as ET
-import xml.dom.minidom as md
+
 
 ID_RE = r'[a-zA-Z_][a-zA-Z_0-9]*'
 TYPE_RE = r'(int|char|boolean|{})'.format(ID_RE)
