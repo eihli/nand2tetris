@@ -26,7 +26,7 @@ class TestClassVarDec(TestSquareSxml):
         super(TestClassVarDec, self).setUp()
         self.el = next(e for e in self.el if e.tag == 'classVarDec')
 
-    def testClassVarDec(self):
+    def test_class_var_dec(self):
         self.generator.generate(self.node)
         self.assertEqual(
             self.generator.sym_tab.x['kind'],
