@@ -37,6 +37,10 @@ class TestClassVarDec(TestSquareSxml):
 class TestSubroutineDec(TestSquareSxml):
     def setUp(self):
         super(TestSubroutineDec, self).setUp()
+        self.class_var_decs = [e for e in self.el if e.tag == 'classVarDec']
+        for cvd in self.class_var_decs:
+            self.generator.generate(cp.el_to_node(cvd))
+        self.stream = io.StringIO()
         self.el = next(e for e in self.el if e.tag == 'subroutineDec')
 
     def test_subroutine_dec(self):

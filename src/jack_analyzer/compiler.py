@@ -121,13 +121,15 @@ class Expr(Node):
 
 
 class LetStatement(Node):
-    def split(self, node_class):
+    def split(self):
         # Ignore the let and the ;
-        els = list(self.element)[1:-1]
+        els = [el_to_node(e) for e in list(self.element)[1:-1]]
         op_idx = index_of(
             els,
-            lambda el: isinstance(el_to_node(el), EQ)
+            lambda el: isinstance(el, EQ)
         )
+        # left hand side could be 'x' or 'x[expr]'
+        # right hand side is always just expr
         return els[:op_idx], els[op_idx + 1]
 
 
@@ -340,28 +342,16 @@ class CodeGenerator:
                 for child in node:
                     self.generate(child)
         elif isinstance(node, LetStatement):
-            rhs, lhs = node.split(OpNode)
-            if len(rhs) > 1:
-                var = el_to_node(rhs[0])
-                expr = el_to_node(rhs[2])
-                self.emit_many([
-                    'push {} {}'.format(
-                        self.sym_tab[var.text]['kind'],
-                        self.sym_tab[var.text]['number'],
-                    )
-                ])
-                self.generate(expr)
-                self.emit('add')
-                self.emit('pop pointer 1')
-                self.generate(el_to_node(lhs))
-                self.emit('pop that 0\n')
+            lhs, rhs = node.split()
+            if len(lhs) == 1:
+                lhs_emit = 'pop {} {}'.format(
+                    self.sym_tab[lhs[0].text]['kind'],
+                    self.sym_tab[lhs[0].text]['number'],
+                )
             else:
-                self.generate(el_to_node(lhs))
-                node = el_to_node(rhs[0])
-                self.emit('pop {} {}\n'.format(
-                    self.sym_tab[node.text]['kind'],
-                    self.sym_tab[node.text]['number'],
-                ))
+                lhs_emit = 'PUT ARR LET HERE'
+            self.generate(rhs)
+            self.emit(lhs_emit)
         elif isinstance(node, KeywordConstant):
             if node.text == 'null' or node.text == 'false':
                 self.emit('push constant 0\n')
@@ -392,6 +382,7 @@ class CodeGenerator:
                 return_type = children[1].text.strip()
                 subroutine_name = children[2].text.strip()
                 param_list = children[4]
+                self.generate(param_list)  # Populate sym table
                 num_fields = len(list(
                     k for k, v in self.sym_tab.cls.items()
                     if v['kind'] == 'field'
@@ -414,9 +405,15 @@ class CodeGenerator:
         elif isinstance(node, SubroutineBody):
             children = list(node)
             statements = children[1]
-            print(statements)
             for statement in statements:
                 self.generate(statement)
+        elif isinstance(node, Identifier):
+            self.emit(
+                'push {} {}'.format(
+                    self.sym_tab[node.text]['kind'],
+                    self.sym_tab[node.text]['number']
+                )
+            )
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
