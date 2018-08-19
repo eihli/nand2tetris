@@ -45,11 +45,6 @@ def srds(et):
     return [el for el in et if el.tag == SRD]
 
 
-def params(el):
-    prm_list = list(next(e for e in el if e.tag == PRML))
-    return split(prm_list, lambda e: e.text.strip() == ',')
-
-
 def let_stmnts(el):
     return list(next(e for e in el.iter() if e.tag == LETS))
 
@@ -77,11 +72,12 @@ def symbolize(input_str):
             count += 1
     subroutine_decs = srds(et)
     for srd in subroutine_decs:
-        prms = params(srd)
+        param_list = next(e for e in srd if e.tag == PRML)
+        params = split(param_list, lambda x: x.text.strip() == ',')
         count = 0
-        for prm in prms:
-            tp = prm[0].text.strip()
-            ident = prm[1]
+        for param in params:
+            tp = param[0].text.strip()
+            ident = param[1]
             ident.set('category', 'argument')
             ident.set('type', tp)
             ident.set('number', str(count))
