@@ -57,6 +57,14 @@ class Node:
     def text(self):
         return self.element.text.strip()
 
+    @property
+    def category(self):
+        return self.element.attrib['category']
+
+    @property
+    def number(self):
+        return self.element.attrib['number']
+
 
 class TokenTree:
     def __init__(self, etree):
@@ -155,6 +163,18 @@ class Period(Node):
     pass
 
 
+class ClassVarDec(Node):
+    pass
+
+
+class Comma(Node):
+    pass
+
+
+class SemiColon(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
@@ -173,6 +193,10 @@ def el_to_node(el):
             return OpenParen(el)
         elif el.text.strip() == ')':
             return CloseParen(el)
+        elif el.text.strip() == ',':
+            return Comma(el)
+        elif el.text.strip() == ';':
+            return SemiColon(el)
         else:
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
@@ -187,6 +211,8 @@ def el_to_node(el):
         return KeywordConstant(el)
     elif el.tag == 'expressionList':
         return ExprList(el)
+    elif el.tag == 'classVarDec':
+        return ClassVarDec(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -293,6 +319,12 @@ class CodeGenerator:
         elif isinstance(node, ExprList):
             for expr in node:
                 self.generate(expr)
+        elif isinstance(node, ClassVarDec):
+            for e in [e for e in node if e.type == 'identifier']:
+                self.sym_tab.cls[e.text] = {
+                    'kind': e.category,
+                    'number': e.number,
+                }
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
