@@ -34,6 +34,24 @@ class TestClassVarDec(TestSquareSxml):
         )
 
 
+class TestSubroutineDec(TestSquareSxml):
+    def setUp(self):
+        super(TestSubroutineDec, self).setUp()
+        self.el = next(e for e in self.el if e.tag == 'subroutineDec')
+
+    def test_subroutine_dec(self):
+        self.generator.generate(self.node)
+        self.assertEqual(
+            self.stream.getvalue(),
+            '\n'.join([
+                'function Square.new 3',
+                'push 2',
+                'call Memory.alloc 1',
+                'pop pointer 0',
+                'push pointer 0\n',
+            ])
+        )
+
 class TestCompiler(ut.TestCase):
     def setUp(self):
         self.stream = io.StringIO()

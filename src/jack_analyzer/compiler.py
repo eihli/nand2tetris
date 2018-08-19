@@ -131,6 +131,18 @@ class LetStatement(Node):
         return els[:op_idx], els[op_idx + 1]
 
 
+class DoStatement(Node):
+    pass
+
+
+class ReturnStatement(Node):
+    pass
+
+
+class WhileStatement(Node):
+    pass
+
+
 class KeywordConstant(Node):
     pass
 
@@ -175,6 +187,30 @@ class SemiColon(Node):
     pass
 
 
+class SubroutineDec(Node):
+    pass
+
+
+class ParameterList(Node):
+    pass
+
+
+class SubroutineBody(Node):
+    pass
+
+
+class OpenBrace(Node):
+    pass
+
+
+class CloseBrace(Node):
+    pass
+
+
+class Statements(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
@@ -197,6 +233,10 @@ def el_to_node(el):
             return Comma(el)
         elif el.text.strip() == ';':
             return SemiColon(el)
+        elif el.text.strip() == '{':
+            return OpenBrace(el)
+        elif el.text.strip() == '}':
+            return CloseBrace(el)
         else:
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
@@ -205,6 +245,12 @@ def el_to_node(el):
         return Term(el)
     elif el.tag == 'letStatement':
         return LetStatement(el)
+    elif el.tag == 'doStatement':
+        return DoStatement(el)
+    elif el.tag == 'returnStatement':
+        return ReturnStatement(el)
+    elif el.tag == 'whileStatement':
+        return WhileStatement(el)
     elif el.tag == 'identifier':
         return Identifier(el)
     elif el.tag == 'keyword':
@@ -213,6 +259,14 @@ def el_to_node(el):
         return ExprList(el)
     elif el.tag == 'classVarDec':
         return ClassVarDec(el)
+    elif el.tag == 'subroutineDec':
+        return SubroutineDec(el)
+    elif el.tag == 'parameterList':
+        return ParameterList(el)
+    elif el.tag == 'subroutineBody':
+        return SubroutineBody(el)
+    elif el.tag == 'statements':
+        return Statements(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -325,6 +379,44 @@ class CodeGenerator:
                     'kind': e.category,
                     'number': e.number,
                 }
+        elif isinstance(node, ParameterList):
+            for e in [e for e in node if e.type == 'identifier']:
+                self.sym_tab.mth[e.text] = {
+                    'kind': e.category,
+                    'number': e.number,
+                }
+        elif isinstance(node, SubroutineDec):
+            children = list(node)
+            fn_type = children[0].text.strip()
+            if fn_type == 'constructor':
+                return_type = children[1].text.strip()
+                subroutine_name = children[2].text.strip()
+                param_list = children[4]
+                num_fields = len(list(
+                    k for k, v in self.sym_tab.cls.items()
+                    if v['kind'] == 'field'
+                ))
+                args = [e for e in param_list if e.type == 'identifier']
+                self.emit_many([
+                    'function {}.{} {}'.format(
+                        return_type,
+                        subroutine_name,
+                        len(args),
+                    )
+                ])
+                # Allocate memory for field variables
+                self.emit('push {}'.format(num_fields))
+                self.emit('call Memory.alloc 1')
+                self.emit('pop pointer 0')
+                subroutine_body = children[6]
+                self.generate(subroutine_body)
+                self.emit('push pointer 0')
+        elif isinstance(node, SubroutineBody):
+            children = list(node)
+            statements = children[1]
+            print(statements)
+            for statement in statements:
+                self.generate(statement)
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
