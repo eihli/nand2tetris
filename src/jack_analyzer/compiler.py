@@ -344,8 +344,11 @@ class CodeGenerator:
         elif isinstance(node, LetStatement):
             lhs, rhs = node.split()
             if len(lhs) == 1:
+                kind = self.sym_tab[lhs[0].text]['kind']
+                if kind == 'field':
+                    kind = 'this'
                 lhs_emit = 'pop {} {}'.format(
-                    self.sym_tab[lhs[0].text]['kind'],
+                    kind,
                     self.sym_tab[lhs[0].text]['number'],
                 )
             else:
@@ -358,8 +361,10 @@ class CodeGenerator:
             elif node.text == 'true':
                 self.emit('push constant 1\n')
                 self.emit('neg\n')
+            elif node.text == 'this':
+                self.emit('push pointer 0')
             else:
-                self.emit('push argument 0\n')
+                raise Exception("Keyword {} not handled".format(node.text))
         elif isinstance(node, ExprList):
             for expr in node:
                 self.generate(expr)
@@ -401,19 +406,35 @@ class CodeGenerator:
                 self.emit('pop pointer 0')
                 subroutine_body = children[6]
                 self.generate(subroutine_body)
-                self.emit('push pointer 0')
         elif isinstance(node, SubroutineBody):
             children = list(node)
             statements = children[1]
             for statement in statements:
                 self.generate(statement)
         elif isinstance(node, Identifier):
+            kind = self.sym_tab[node.text]['kind']
+            if kind == 'field':
+                kind = 'this'
             self.emit(
                 'push {} {}'.format(
-                    self.sym_tab[node.text]['kind'],
+                    kind,
                     self.sym_tab[node.text]['number']
                 )
             )
+        elif isinstance(node, DoStatement):
+            children = [e for e in node.element]
+            expr_list = next(e for e in node if e.type == 'expressionList')
+            self.generate(expr_list)
+            self.emit('call {} {}'.format(
+                children[1].text.strip(),
+                len(expr_list),
+            ))
+        elif isinstance(node, ReturnStatement):
+            expr = next((e for e in node if e.type == 'expression'), None)
+            if expr:
+                self.generate(expr)
+            else:
+                self.emit('push constant 0')
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__

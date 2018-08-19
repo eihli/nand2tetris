@@ -62,10 +62,10 @@ def symbolize(input_str):
     et = ET.fromstring(input_str)
     count = 0
     class_var_decs = [e for e in et if e.tag == CVD]
+    count = 0
     for cvd in class_var_decs:
         cat = cvd[0].text.strip()
         tp = cvd[1].text.strip()
-        count = 0
         vars = [e for e in cvd if e.tag == ID]
         for var in vars:
             var.set('category', cat)

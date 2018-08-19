@@ -40,7 +40,6 @@ class TestSubroutineDec(TestSquareSxml):
         self.class_var_decs = [e for e in self.el if e.tag == 'classVarDec']
         for cvd in self.class_var_decs:
             self.generator.generate(cp.el_to_node(cvd))
-        self.stream = io.StringIO()
         self.el = next(e for e in self.el if e.tag == 'subroutineDec')
 
     def test_subroutine_dec(self):
@@ -49,9 +48,16 @@ class TestSubroutineDec(TestSquareSxml):
             self.stream.getvalue(),
             '\n'.join([
                 'function Square.new 3',
-                'push 2',
+                'push 3',
                 'call Memory.alloc 1',
                 'pop pointer 0',
+                'push argument 0',
+                'pop this 0',
+                'push argument 1',
+                'pop this 1',
+                'push argument 2',
+                'pop this 2',
+                'call draw 0',
                 'push pointer 0\n',
             ])
         )
