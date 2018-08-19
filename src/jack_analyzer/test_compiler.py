@@ -1,8 +1,37 @@
 import io
+import os
 import unittest as ut
 import xml.etree.ElementTree as ET
 
 import compiler as cp
+
+
+class TestSquareSxml(ut.TestCase):
+    @property
+    def node(self):
+        return cp.el_to_node(self.el)
+
+    def setUp(self):
+        fn = os.path.expanduser(
+            '~/code/nand2tetris/src/jack_analyzer/Square.sxml'
+        )
+        with open(fn) as f:
+            self.el = ET.fromstring(f.read())
+        self.stream = io.StringIO()
+        self.generator = cp.CodeGenerator(self.stream)
+
+
+class TestClassVarDec(TestSquareSxml):
+    def setUp(self):
+        super(TestClassVarDec, self).setUp()
+        self.el = next(e for e in self.el if e.tag == 'classVarDec')
+
+    def testClassVarDec(self):
+        self.generator.generate(self.node)
+        self.assertEqual(
+            self.generator.sym_tab.x['kind'],
+            'field'
+        )
 
 
 class TestCompiler(ut.TestCase):
