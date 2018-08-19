@@ -1,4 +1,5 @@
 from enum import Enum, auto
+import sys
 import xml.etree.ElementTree as ET
 
 
@@ -92,4 +93,15 @@ def symbolize(input_str):
                 e.set('type', tp)
                 e.set('number', str(count))
                 count += 1
-    return et
+    return ET.tostring(et).decode()
+
+
+def main(input_str):
+    return symbolize(input_str)
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    infile = args[0]
+    with open(infile) as f:
+        print(main(f.read()))
