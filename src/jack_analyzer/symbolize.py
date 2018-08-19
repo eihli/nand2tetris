@@ -61,15 +61,16 @@ def is_separator(el):
 def symbolize(input_str):
     et = ET.fromstring(input_str)
     count = 0
-    class_var_dec = cvd(et)
-    declarations = split(class_var_dec, is_separator)
-    for d in declarations:
-        cat = d[0].text.strip()
-        tp = d[1].text.strip()
-        for el in d[2:]:
-            el.set('category', cat)
-            el.set('type', tp)
-            el.set('number', str(count))
+    class_var_decs = [e for e in et if e.tag == CVD]
+    for cvd in class_var_decs:
+        cat = cvd[0].text.strip()
+        tp = cvd[1].text.strip()
+        count = 0
+        vars = [e for e in cvd if e.tag == ID]
+        for var in vars:
+            var.set('category', cat)
+            var.set('type', tp)
+            var.set('number', str(count))
             count += 1
     subroutine_decs = srds(et)
     for srd in subroutine_decs:
