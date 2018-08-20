@@ -1,3 +1,4 @@
+import io
 import itertools as it
 import xml.etree.ElementTree as ET
 
@@ -213,9 +214,15 @@ class Statements(Node):
     pass
 
 
+class ClassNode(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
+    elif el.tag == 'class':
+        return ClassNode(el)
     elif el.tag == 'stringConstant':
         return StringNode(el)
     elif el.tag == 'symbol':
@@ -415,6 +422,8 @@ class CodeGenerator:
                 self.emit('pop pointer 0')
                 subroutine_body = children[6]
                 self.generate(subroutine_body)
+            else:
+                raise Exception("Fn type {} not handled".format(fn_type))
         elif isinstance(node, SubroutineBody):
             children = list(node)
             statements = children[1]
@@ -444,7 +453,22 @@ class CodeGenerator:
                 self.generate(expr)
             else:
                 self.emit('push constant 0')
+        elif isinstance(node, ClassNode):
+            class_var_decs = [e for e in node if e.type == 'classVarDec']
+            subroutine_decs = [e for e in node if e.type == 'subroutineDec']
+            for child in class_var_decs:
+                self.generate(child)
+            for child in subroutine_decs:
+                self.generate(child)
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
             ))
+
+
+def main(input_str):
+    et = ET.fromstring(input_str)
+    stream = io.StringIO()
+    generator = CodeGenerator(stream)
+    generator.generate(el_to_node(et))
+    return stream.getvalue()

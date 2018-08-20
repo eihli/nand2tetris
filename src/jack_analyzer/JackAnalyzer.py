@@ -1,7 +1,10 @@
+import io
 from pathlib import Path
 import sys
+import compiler
 from tokenizer import strip_comments, tokenize
 from parser import parse
+from symbolize import symbolize
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
@@ -49,8 +52,20 @@ def parse_file(filename):
         f.write(out)
 
 
+def symbolize_file(filename):
+    with open(filename) as f:
+        out = symbolize(f.read())
+    path = Path(filename)
+    stem = path.stem
+    sxml = str(path.parents[0].joinpath(
+        '{}.sxml'.format(stem)
+    ))
+    with open(sxml, 'w') as f:
+        f.write(out)
+
+
 if __name__ == "__main__":
-    srcfile = sys.argv[1]
+    filename, srcfile = sys.argv[1], sys.argv[1]
     path = Path(srcfile)
     if path.is_dir():
         for filename in path.iterdir():
@@ -59,6 +74,16 @@ if __name__ == "__main__":
         for filename in path.iterdir():
             if (filename.suffix == '.xml' and filename.stem[-1] == 'T'):
                 parse_file(str(filename))
+        for filename in path.iterdir():
+            if (filename.suffix == '.xml' and filename.stem[-1] != 'T'):
+                symbolize_file(str(filename))
     else:
         tokenize_file(str(filename))
-        parse_file(str(filename))
+        txml = path.stem + 'T.xml'
+        parse_file(txml)
+        xml = path.stem + '.xml'
+        symbolize_file(xml)
+        with open(path.stem + '.sxml') as f:
+            txt = f.read()
+            result = compiler.main(txt)
+        print(result)
