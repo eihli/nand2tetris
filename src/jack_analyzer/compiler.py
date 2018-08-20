@@ -343,18 +343,27 @@ class CodeGenerator:
                     self.generate(child)
         elif isinstance(node, LetStatement):
             lhs, rhs = node.split()
+            kind = self.sym_tab[lhs[0].text]['kind']
+            number = self.sym_tab[lhs[0].text]['number']
             if len(lhs) == 1:
-                kind = self.sym_tab[lhs[0].text]['kind']
+                self.generate(rhs)
                 if kind == 'field':
                     kind = 'this'
                 lhs_emit = 'pop {} {}'.format(
                     kind,
-                    self.sym_tab[lhs[0].text]['number'],
+                    number,
                 )
+                self.emit(lhs_emit)
             else:
-                lhs_emit = 'PUT ARR LET HERE'
-            self.generate(rhs)
-            self.emit(lhs_emit)
+                self.emit('push {} {}'.format(
+                    kind, number,
+                ))
+                expr = lhs[2]
+                self.generate(expr)
+                self.emit('add')
+                self.emit('pop pointer 1')
+                self.generate(rhs)
+                self.emit('pop that 0')
         elif isinstance(node, KeywordConstant):
             if node.text == 'null' or node.text == 'false':
                 self.emit('push constant 0\n')
