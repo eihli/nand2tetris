@@ -64,7 +64,8 @@ def strip_comments(input_str):
 
 
 def tokenize(input_str):
-    rest = input_str.lstrip()
+    decommented = strip_comments(input_str)
+    rest = decommented.lstrip()
     out = '<tokens>\r\n'
     # [out, token, rest :=
     #  tokenized input_str (xml) so far,
@@ -103,6 +104,5 @@ if __name__ == "__main__":
     infile = sys.argv[1]
     with open(infile) as f:
         input_str = f.read()
-    decommented = strip_comments(input_str)
-    tokenized = tokenize(decommented)
+    tokenized = tokenize(input_str)
     print(tokenized)
