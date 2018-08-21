@@ -466,6 +466,11 @@ class CodeGenerator:
             ))
 
 
+
+def compile(input_str):
+    return main(input_str)
+
+
 def main(input_str):
     et = ET.fromstring(input_str)
     stream = io.StringIO()
