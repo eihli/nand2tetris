@@ -422,6 +422,25 @@ class CodeGenerator:
                 self.emit('pop pointer 0')
                 subroutine_body = children[6]
                 self.generate(subroutine_body)
+            elif fn_type == 'function':
+                return_type = children[1].text.strip()
+                subroutine_name = children[2].text.strip()
+                param_list = children[4]
+                self.generate(param_list)
+                num_fields = len(list(
+                    k for k, v in self.sym_tab.cls.items()
+                    if v['kind'] == 'field'
+                ))
+                args = [e for e in param_list if e.type == 'identifier']
+                self.emit_many([
+                    'function {}.{} {}'.format(
+                        'SOME_CLASS_NAME',
+                        subroutine_name,
+                        len(args),
+                    )
+                ])
+                subroutine_body = children[6]
+                self.generate(subroutine_body)
             else:
                 raise Exception("Fn type {} not handled".format(fn_type))
         elif isinstance(node, SubroutineBody):

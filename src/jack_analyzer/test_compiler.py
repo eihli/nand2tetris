@@ -246,3 +246,8 @@ class TestFoo(ut.TestCase):
                 'call SquareGame.new 1\n',
             ])
         )
+
+
+class TestClass(ut.TestCase):
+    def setUp(self):
+        super(TestClass, self).setUp()
