@@ -1,4 +1,3 @@
-from enum import Enum, auto
 import sys
 import xml.etree.ElementTree as ET
 
@@ -10,15 +9,6 @@ KW = 'keyword'
 PRML = 'parameterList'
 LETS = 'letStatement'
 VARD = 'varDec'
-
-
-class Context(Enum):
-    VAR = auto()
-    ARG = auto()
-    STATIC = auto()
-    FIELD = auto()
-    CLASS = auto()
-    SUBR = auto()
 
 
 def split(el, p):
