@@ -198,6 +198,10 @@ class ParameterList(Node):
     pass
 
 
+class VarDec(Node):
+    pass
+
+
 class SubroutineBody(Node):
     pass
 
@@ -276,6 +280,8 @@ def el_to_node(el):
         return SubroutineBody(el)
     elif el.tag == 'statements':
         return Statements(el)
+    elif el.tag == 'varDec':
+        return VarDec(el)
     else:
         raise Exception('Unhandled el tag {}'.format(el.tag))
 
@@ -445,7 +451,10 @@ class CodeGenerator:
                 raise Exception("Fn type {} not handled".format(fn_type))
         elif isinstance(node, SubroutineBody):
             children = list(node)
-            statements = children[1]
+            var_decs = [e for e in children if e.type == 'varDec']
+            for var_dec in var_decs:
+                self.generate(var_dec)
+            statements = [e for e in children if e.type == 'statements']
             for statement in statements:
                 self.generate(statement)
         elif isinstance(node, Identifier):
@@ -479,10 +488,18 @@ class CodeGenerator:
                 self.generate(child)
             for child in subroutine_decs:
                 self.generate(child)
+        elif isinstance(node, VarDec):
+            for e in [e for e in node if e.type == 'identifier']:
+                if e.element.attrib:
+                    self.sym_tab.mth[e.text] = {
+                        'kind': e.category,
+                        'number': e.number,
+                    }
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
             ))
+
 
 
 

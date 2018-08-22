@@ -47,7 +47,7 @@ class TestJackAnalyzer(ut.TestCase):
         with open('test_data/compiled.vm') as c:
             c.write(compiled)
         with open('test_data/compiled_cmp.vm', 'w') as expected, \
-             open('test_data/compiled.vm') as actual:
+             open('test_data/compiled.vm') as actual:  # noqa: E127
             expected.write(compiled)
             self.assertEqual(
                 expected.read(),
