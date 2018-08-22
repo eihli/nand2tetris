@@ -43,7 +43,7 @@ class TestJackAnalyzer(ut.TestCase):
     def test_symbolize(self):
         with open('test_data/parsed.xml') as p:
             actual = symbolize(p.read())
-        with open('test_data/symbolized_cmp.sxml', 'w') as expected, \
+        with open('test_data/symbolized_cmp.sxml') as expected, \
              open('test_data/symbolized.sxml') as actual:  # noqa: E127
             self.assertEqual(
                 expected.read(),
@@ -55,9 +55,8 @@ class TestJackAnalyzer(ut.TestCase):
             compiled = compile(s.read())
         with open('test_data/compiled.vm') as c:
             c.write(compiled)
-        with open('test_data/compiled_cmp.vm', 'w') as expected, \
+        with open('test_data/compiled_cmp.vm') as expected, \
              open('test_data/compiled.vm') as actual:  # noqa: E127
-            expected.write(compiled)
             self.assertEqual(
                 expected.read(),
                 actual.read(),
