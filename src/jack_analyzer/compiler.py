@@ -454,7 +454,7 @@ class CodeGenerator:
             var_decs = [e for e in children if e.type == 'varDec']
             for var_dec in var_decs:
                 self.generate(var_dec)
-            statements = [e for e in children if e.type == 'statements']
+            statements = next((e for e in children if e.type == 'statements'), [])
             for statement in statements:
                 self.generate(statement)
         elif isinstance(node, Identifier):
@@ -495,6 +495,10 @@ class CodeGenerator:
                         'kind': e.category,
                         'number': e.number,
                     }
+        elif isinstance(node, Statements):
+            children = list(node)
+            for child in children:
+                self.generate(child)
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
