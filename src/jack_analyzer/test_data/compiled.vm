@@ -1,0 +1,79 @@
+function SOME_CLASS_NAME.main 0
+push constant 17
+String.new 1
+push constant 72
+String.appendChar 2
+push constant 111
+String.appendChar 2
+push constant 119
+String.appendChar 2
+push constant 32
+String.appendChar 2
+push constant 109
+String.appendChar 2
+push constant 97
+String.appendChar 2
+push constant 110
+String.appendChar 2
+push constant 121
+String.appendChar 2
+push constant 32
+String.appendChar 2
+push constant 110
+String.appendChar 2
+push constant 117
+String.appendChar 2
+push constant 109
+String.appendChar 2
+push constant 98
+String.appendChar 2
+push constant 101
+String.appendChar 2
+push constant 114
+String.appendChar 2
+push constant 115
+String.appendChar 2
+push constant 63
+String.appendChar 2
+call Keyboard.readInt 1
+pop var 1
+push var 1
+call Array.new 1
+pop var 0
+push constant 0
+pop var 2
+push constant 14
+String.new 1
+push constant 84
+String.appendChar 2
+push constant 104
+String.appendChar 2
+push constant 101
+String.appendChar 2
+push constant 32
+String.appendChar 2
+push constant 97
+String.appendChar 2
+push constant 118
+String.appendChar 2
+push constant 101
+String.appendChar 2
+push constant 114
+String.appendChar 2
+push constant 97
+String.appendChar 2
+push constant 103
+String.appendChar 2
+push constant 101
+String.appendChar 2
+push constant 32
+String.appendChar 2
+push constant 105
+String.appendChar 2
+push constant 115
+String.appendChar 2
+call Output 1
+push var 3
+push var 1
+call Output 1
+push constant 0
