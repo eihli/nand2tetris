@@ -21,6 +21,8 @@ class TestJackAnalyzer(ut.TestCase):
 
     def test_tokenizer(self):
         tokenized = tokenize(self.src)
+        # We need to write then read this one so /r/n gets
+        # converted to /n
         with open('test_data/tokenized.xml', 'w') as f:
             f.write(tokenized)
         with open('test_data/tokenized_cmp.xml') as expected, \
@@ -33,31 +35,27 @@ class TestJackAnalyzer(ut.TestCase):
     def test_parser(self):
         with open('test_data/tokenized.xml') as t:
             actual = parse(t.read())
-        with open('test_data/parsed_cmp.xml') as expected, \
-             open('test_data/parsed.xml') as actual:  # noqa: E127
+        with open('test_data/parsed_cmp.xml') as expected:
             self.assertEqual(
                 expected.read(),
-                actual.read(),
+                actual,
             )
 
     def test_symbolize(self):
         with open('test_data/parsed.xml') as p:
             actual = symbolize(p.read())
-        with open('test_data/symbolized_cmp.sxml') as expected, \
-             open('test_data/symbolized.sxml') as actual:  # noqa: E127
+        with open('test_data/symbolized_cmp.sxml') as expected:
             self.assertEqual(
                 expected.read(),
-                actual.read(),
+                actual,
             )
 
     def test_compiler(self):
+        self.maxDiff = None
         with open('test_data/symbolized.sxml') as s:
-            compiled = compile(s.read())
-        with open('test_data/compiled.vm') as c:
-            c.write(compiled)
-        with open('test_data/compiled_cmp.vm') as expected, \
-             open('test_data/compiled.vm') as actual:  # noqa: E127
+            actual = compile(s.read())
+        with open('test_data/compiled_cmp.vm') as expected:
             self.assertEqual(
                 expected.read(),
-                actual.read(),
+                actual,
             )

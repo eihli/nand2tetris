@@ -16,6 +16,9 @@ class SymbolTable:
     cls = {}
     mth = {}
 
+    def __init__(self):
+        class_being_parsed = None
+
     def __getattr__(self, name):
         return self.mth.get(name, None) or self.cls.get(name, None)
 
@@ -222,6 +225,10 @@ class ClassNode(Node):
     pass
 
 
+class Div(Node):
+    pass
+
+
 def el_to_node(el):
     if el.tag == 'integerConstant':
         return IntegerNode(el)
@@ -250,6 +257,8 @@ def el_to_node(el):
             return OpenBrace(el)
         elif el.text.strip() == '}':
             return CloseBrace(el)
+        elif el.text.strip() == '/':
+            return Div(el)
         else:
             raise Exception('Unhandled OP {}'.format(el.text))
     elif el.tag == 'expression':
@@ -356,8 +365,13 @@ class CodeGenerator:
                     self.generate(child)
         elif isinstance(node, LetStatement):
             lhs, rhs = node.split()
-            kind = self.sym_tab[lhs[0].text]['kind']
-            number = self.sym_tab[lhs[0].text]['number']
+            try:
+                kind = self.sym_tab[lhs[0].text]['kind']
+                number = self.sym_tab[lhs[0].text]['number']
+            except Exception as e:
+                import pdb; pdb.set_trace()
+                raise e
+
             if len(lhs) == 1:
                 self.generate(rhs)
                 if kind == 'field':
@@ -440,7 +454,7 @@ class CodeGenerator:
                 args = [e for e in param_list if e.type == 'identifier']
                 self.emit_many([
                     'function {}.{} {}'.format(
-                        'SOME_CLASS_NAME',
+                        self.sym_tab.class_being_parsed,
                         subroutine_name,
                         len(args),
                     )
@@ -484,6 +498,7 @@ class CodeGenerator:
         elif isinstance(node, ClassNode):
             class_var_decs = [e for e in node if e.type == 'classVarDec']
             subroutine_decs = [e for e in node if e.type == 'subroutineDec']
+            self.sym_tab.class_being_parsed = list(node)[1].text
             for child in class_var_decs:
                 self.generate(child)
             for child in subroutine_decs:
@@ -499,6 +514,10 @@ class CodeGenerator:
             children = list(node)
             for child in children:
                 self.generate(child)
+        elif isinstance(node, WhileStatement):
+            pass
+        elif isinstance(node, Div):
+            pass
         else:
             raise Exception('Unhandled node type {}'.format(
                 node.__class__.__name__
