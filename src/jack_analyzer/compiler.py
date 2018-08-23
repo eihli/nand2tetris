@@ -25,6 +25,10 @@ class SymbolTable:
     def __getitem__(self, name):
         return getattr(self, name)
 
+    def reset_mth(self):
+        self.mth = {}
+
+
 
 def take_until(iterable, until_fn):
     for el, p in [(el, until_fn(el)) for el in iterable]:
@@ -447,16 +451,13 @@ class CodeGenerator:
                 subroutine_name = children[2].text.strip()
                 param_list = children[4]
                 self.generate(param_list)
-                num_fields = len(list(
-                    k for k, v in self.sym_tab.cls.items()
-                    if v['kind'] == 'field'
-                ))
-                args = [e for e in param_list if e.type == 'identifier']
+                import pdb; pdb.set_trace()
+
                 self.emit_many([
                     'function {}.{} {}'.format(
                         self.sym_tab.class_being_parsed,
                         subroutine_name,
-                        len(args),
+                        len(self.sym_tab.mth),
                     )
                 ])
                 subroutine_body = children[6]
