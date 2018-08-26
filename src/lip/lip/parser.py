@@ -1,4 +1,4 @@
-from lip.lexer import Lexer
+from lip.list_lexer import ListLexer
 
 
 class Parser:
@@ -15,7 +15,7 @@ class Parser:
         else:
             template = "Expecting {} found {}"
             msg = template.format(
-                Lexer.token_names(x),
-                Lexer.token_names(self.lookahead),
+                ListLexer.token_names(x),
+                ListLexer.get_token_name(x.type),
             )
             raise Exception(msg)
