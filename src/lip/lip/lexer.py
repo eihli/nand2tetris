@@ -1,6 +1,6 @@
 import re
 
-from token import Token
+from lip.token import Token
 
 
 class EOF:
