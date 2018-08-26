@@ -2,18 +2,18 @@
 # elements    : element (',' element)* ;
 # element     : NAME | list ;
 # NAME        : ('a'..'z'|'A'..'Z') ;
-from lexer import Lexer
+from lip.list_lexer import ListLexer
 
 
 def fmt(t):
-    return "<'{}', {}>".format(t.text, Lexer.token_names(t.type))
+    return "<'{}', {}>".format(t.text, ListLexer.get_token_name(t.type))
 
 
 def main():
     sample = "[krogoth, kestrel, ktulu, krocodile]"
-    lexer = Lexer(sample)
+    lexer = ListLexer(sample)
     t = lexer.next_token()
-    while t.type != Lexer.EOF:
+    while t.type != ListLexer.EOF_TYPE:
         print(fmt(t))
         t = lexer.next_token()
     print(fmt(t))

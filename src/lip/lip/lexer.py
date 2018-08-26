@@ -1,67 +1,31 @@
-import re
-
-from lip.token import Token
-
-
-class EOF:
-    pass
-
-
 class Lexer:
-    EOF = -1
-    INVALID_TOKEN_TYPE = 0
-    NAME = 1
-    OPEN_BRACKET = 2
-    CLOSE_BRACKET = 3
-    COMMA = 4
+    EOF_TYPE = 1
 
-    def __init__(self, input_):
-        self.input = input_
+    class EOF_Char:
+        pass
+
+    def __init__(self, _input):
+        self._input = _input
         self.p = 0
-        self.char = self.input[self.p]
-
-    @staticmethod
-    def token_names(type_):
-        return {
-            Lexer.EOF: "<EOF>",
-            Lexer.INVALID_TOKEN_TYPE: "n/a",
-            Lexer.NAME: "NAME",
-            Lexer.OPEN_BRACKET: "OPEN_BRACKET",
-            Lexer.CLOSE_BRACKET: "CLOSE_BRACKET",
-            Lexer.COMMA: "COMMA",
-        }[type_]
+        self.char = self._input[self.p]
 
     def consume(self):
         self.p += 1
-        if self.p == len(self.input):
-            self.char = EOF
+        if self.p == len(self._input):
+            self.char = self.EOF_Char
         else:
-            self.char = self.input[self.p]
+            self.char = self._input[self.p]
+
+    def match(self, x):
+        if self.char == x:
+            self.consume()
+        else:
+            fmt_str = "Expecting {}. Found {}."
+            msg = fmt_str.format(x, self.char)
+            raise Exception(msg)
 
     def next_token(self):
-        while self.char != EOF:
-            if self.char in {' ', '\t', '\n', '\r'}:
-                self.consume()
-                continue
-            elif self.char == ',':
-                self.consume()
-                return Token(self.COMMA, ',')
-            elif self.char == '[':
-                self.consume()
-                return Token(self.OPEN_BRACKET, '[')
-            elif self.char == ']':
-                self.consume()
-                return Token(self.CLOSE_BRACKET, ']')
-            elif re.match(r'[a-zA-Z]', self.char):
-                return self.name()
-            else:
-                raise Exception("invalid character: {}".format(self.char))
-        return Token(self.EOF, "<EOF>")
+        raise NotImplementedError()
 
-    def name(self):
-        name = self.char
-        self.consume()
-        while re.match(r'[a-zA-Z]', self.char):
-            name += self.char
-            self.consume()
-        return Token(self.NAME, name)
+    def get_token_name(self):
+        raise NotImplementedError()
